@@ -1,0 +1,377 @@
+advancement grant <players: players> everything
+advancement grant <players: players> from <advancement: id>
+advancement grant <players: players> only <advancement: id>
+advancement grant <players: players> only <advancement: id> <criterion: id>
+advancement grant <players: players> through <advancement: id>
+advancement grant <players: players> until <advancement: id>
+advancement revoke <players: players> everything
+advancement revoke <players: players> from <advancement: id>
+advancement revoke <players: players> only <advancement: id>
+advancement revoke <players: players> only <advancement: id> <criterion: id>
+advancement revoke <players: players> through <advancement: id>
+advancement revoke <players: players> until <advancement: id>
+advancement test <players: players> <advancement: string>
+advancement test <players: players> <advancement: string> <criterion: id>
+ban <players: players>
+ban <players: players> <reason: string>
+ban-ip <ip: string>
+ban-ip <ip: string> <reason: string>
+ban-ip <players: players>
+ban-ip <players: players> <reason: string>
+banlist ips
+banlist players
+blockdata <pos: x y z>
+blockdata <pos: x y z> <nbt: nbt>
+clear
+clear <players: players>
+clear <players: players> <item: item>
+clear <players: players> <item: item> <maxCount: string>
+clone <begin: x y z> <end: x y z> <destination: x y z>
+clone <begin: x y z> <end: x y z> <destination: x y z> filtered <filter: block>
+clone <begin: x y z> <end: x y z> <destination: x y z> filtered <filter: block> force
+clone <begin: x y z> <end: x y z> <destination: x y z> filtered <filter: block> move
+clone <begin: x y z> <end: x y z> <destination: x y z> filtered <filter: block> normal
+clone <begin: x y z> <end: x y z> <destination: x y z> masked
+clone <begin: x y z> <end: x y z> <destination: x y z> masked force
+clone <begin: x y z> <end: x y z> <destination: x y z> masked move
+clone <begin: x y z> <end: x y z> <destination: x y z> masked normal
+clone <begin: x y z> <end: x y z> <destination: x y z> replace
+clone <begin: x y z> <end: x y z> <destination: x y z> replace force
+clone <begin: x y z> <end: x y z> <destination: x y z> replace move
+clone <begin: x y z> <end: x y z> <destination: x y z> replace normal
+debug start
+debug stop
+defaultgamemode adventure
+defaultgamemode creative
+defaultgamemode spectator
+defaultgamemode survival
+deop <target: players>
+difficulty easy
+difficulty hard
+difficulty normal
+difficulty peaceful
+effect clear <entities: entities>
+effect give <entities: entities> <effect: id>
+effect give <entities: entities> <effect: id> <seconds: int>
+effect give <entities: entities> <effect: id> <seconds: int> <amplifier: int>
+effect give <entities: entities> <effect: id> <seconds: int> <amplifier: int> <hideParticles: bool>
+enchant <entities: entities> <enchantment: id>
+enchant <entities: entities> <enchantment: id> <level: int>
+entitydata <entities: entities>
+entitydata <entities: entities> <nbt: nbt>
+execute as <targets: entities> -> execute
+execute offset <pos: x y z> -> execute
+execute at <targets: entities> -> execute
+execute if block <pos: x y z> <block: block> -> execute
+execute if blocks <start: x y z> <end: x y z> <destination: x y z> all -> execute
+execute if blocks <start: x y z> <end: x y z> <destination: x y z> masked -> execute
+execute if entity <condition: entities> -> execute
+execute unless block <pos: x y z> <block: block> -> execute
+execute unless blocks <start: x y z> <end: x y z> <destination: x y z> all -> execute
+execute unless blocks <start: x y z> <end: x y z> <destination: x y z> masked -> execute
+execute unless entity <condition: entities> -> execute
+execute store result <name: entity> <objective: string> -> execute
+execute store success <name: entity> <objective: string> -> execute
+execute then ...
+fill <from: x y z> <to: x y z> <block: block>
+fill <from: x y z> <to: x y z> <block: block> destroy
+fill <from: x y z> <to: x y z> <block: block> hollow
+fill <from: x y z> <to: x y z> <block: block> keep
+fill <from: x y z> <to: x y z> <block: block> outline
+fill <from: x y z> <to: x y z> <block: block> replace <filter: block>
+function <name: id>
+gamemode adventure
+gamemode adventure <target: players>
+gamemode creative
+gamemode creative <target: players>
+gamemode spectator
+gamemode spectator <target: players>
+gamemode survival
+gamemode survival <target: players>
+gamerule announceAdvancements
+gamerule announceAdvancements <value: bool>
+gamerule commandBlockOutput
+gamerule commandBlockOutput <value: bool>
+gamerule disableElytraMovementCheck
+gamerule disableElytraMovementCheck <value: bool>
+gamerule doDaylightCycle
+gamerule doDaylightCycle <value: bool>
+gamerule doEntityDrops
+gamerule doEntityDrops <value: bool>
+gamerule doFireTick
+gamerule doFireTick <value: bool>
+gamerule doLimitedCrafting
+gamerule doLimitedCrafting <value: bool>
+gamerule doMobLoot
+gamerule doMobLoot <value: bool>
+gamerule doMobSpawning
+gamerule doMobSpawning <value: bool>
+gamerule doTileDrops
+gamerule doTileDrops <value: bool>
+gamerule doWeatherCycle
+gamerule doWeatherCycle <value: bool>
+gamerule gameLoopFunction
+gamerule gameLoopFunction <value: id>
+gamerule keepInventory
+gamerule keepInventory <value: bool>
+gamerule logAdminCommands
+gamerule logAdminCommands <value: bool>
+gamerule maxCommandChainLength
+gamerule maxCommandChainLength <value: int>
+gamerule maxEntityCramming
+gamerule maxEntityCramming <value: int>
+gamerule mobGriefing
+gamerule mobGriefing <value: bool>
+gamerule naturalRegeneration
+gamerule naturalRegeneration <value: bool>
+gamerule randomTickSpeed
+gamerule randomTickSpeed <value: int>
+gamerule reducedDebugInfo
+gamerule reducedDebugInfo <value: bool>
+gamerule sendCommandFeedback
+gamerule sendCommandFeedback <value: bool>
+gamerule showDeathMessages
+gamerule showDeathMessages <value: bool>
+gamerule spawnRadius
+gamerule spawnRadius <value: int>
+gamerule spectatorsGenerateChunks
+gamerule spectatorsGenerateChunks <value: bool>
+gamerule structureSaveDestination
+gamerule structureSaveDestination <value: string>
+give <target: players> <item: item>
+give <target: players> <item: item> <count: int>
+help
+help <command: string>
+kick <victims: players> <reason: string>
+kick <victims: players>
+kill <victims: entities>
+list
+locate EndCity
+locate Fortress
+locate Mansion
+locate Mineshaft
+locate Monument
+locate Stronghold
+locate Temple
+locate Village
+me <action: string>
+msg <target: players> <message: string>
+op <target: players>
+pardon <players: players>
+pardon-ip <ip: string>
+pardon-ip <players: players>
+particle <name: id> <pos: x y z> <delta: x y z> <speed: int> <count: int>
+particle <name: id> <pos: x y z> <delta: x y z> <speed: int> <count: int> force
+particle <name: id> <pos: x y z> <delta: x y z> <speed: int> <count: int> force <viewers: players>
+particle <name: id> <pos: x y z> <delta: x y z> <speed: int> <count: int> normal
+particle <name: id> <pos: x y z> <delta: x y z> <speed: int> <count: int> normal <viewers: players>
+playsound <name: id> ambient <target: players>
+playsound <name: id> ambient <target: players> <pos: x y z>
+playsound <name: id> ambient <target: players> <pos: x y z> <volume: float>
+playsound <name: id> ambient <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> ambient <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> block <target: players>
+playsound <name: id> block <target: players> <pos: x y z>
+playsound <name: id> block <target: players> <pos: x y z> <volume: float>
+playsound <name: id> block <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> block <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> hostile <target: players>
+playsound <name: id> hostile <target: players> <pos: x y z>
+playsound <name: id> hostile <target: players> <pos: x y z> <volume: float>
+playsound <name: id> hostile <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> hostile <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> master <target: players>
+playsound <name: id> master <target: players> <pos: x y z>
+playsound <name: id> master <target: players> <pos: x y z> <volume: float>
+playsound <name: id> master <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> master <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> music <target: players>
+playsound <name: id> music <target: players> <pos: x y z>
+playsound <name: id> music <target: players> <pos: x y z> <volume: float>
+playsound <name: id> music <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> music <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> neutral <target: players>
+playsound <name: id> neutral <target: players> <pos: x y z>
+playsound <name: id> neutral <target: players> <pos: x y z> <volume: float>
+playsound <name: id> neutral <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> neutral <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> player <target: players>
+playsound <name: id> player <target: players> <pos: x y z>
+playsound <name: id> player <target: players> <pos: x y z> <volume: float>
+playsound <name: id> player <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> player <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> record <target: players>
+playsound <name: id> record <target: players> <pos: x y z>
+playsound <name: id> record <target: players> <pos: x y z> <volume: float>
+playsound <name: id> record <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> record <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> voice <target: players>
+playsound <name: id> voice <target: players> <pos: x y z>
+playsound <name: id> voice <target: players> <pos: x y z> <volume: float>
+playsound <name: id> voice <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> voice <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+playsound <name: id> weather <target: players>
+playsound <name: id> weather <target: players> <pos: x y z>
+playsound <name: id> weather <target: players> <pos: x y z> <volume: float>
+playsound <name: id> weather <target: players> <pos: x y z> <volume: float> <pitch: float>
+playsound <name: id> weather <target: players> <pos: x y z> <volume: float> <pitch: float> <minVolume: float>
+recipe give <target: players> *
+recipe give <target: players> <recipe: id>
+recipe take <target: players> *
+recipe take <target: players> <recipe: id>
+replaceitem block <pos: x y z> <slot: string> <item: item>
+replaceitem block <pos: x y z> <slot: string> <item: item> <count: int>
+replaceitem entity <target: entities> <slot: string> <item: item>
+replaceitem entity <target: entities> <slot: string> <item: item> <count: int>
+save-all
+save-all flush
+save-off
+save-on
+say <message: string>
+scoreboard objectives add <objective: string> <criteria: id>
+scoreboard objectives list
+scoreboard objectives remove <objective: string>
+scoreboard objectives setdisplay <slot: id>
+scoreboard players add * <objective: string> <score: int>
+scoreboard players add <target: entities> <objective: string> <score: int>
+scoreboard players enable * <trigger: string>
+scoreboard players enable <target: entities> <trigger: string>
+scoreboard players list
+scoreboard players list *
+scoreboard players list <target: entities>
+scoreboard players operation * <target objective: string> <operation: string> <source: entities> <source objective: string>
+scoreboard players operation <target: entities> <target objective: string> <operation: string> * <source objective: string>
+scoreboard players operation <target: entities> <target objective: string> <operation: string> <source: entities> <source objective: string>
+scoreboard players remove * <objective: string> <score: int>
+scoreboard players remove <target: entities> <objective: string> <score: int>
+scoreboard players reset *
+scoreboard players reset * <objective: string>
+scoreboard players reset <target: entities>
+scoreboard players reset <target: entities> <objective: string>
+scoreboard players set * <objective: string> <score: int>
+scoreboard players set <target: entities> <objective: string> <score: int>
+scoreboard players tag * add <name: string>
+scoreboard players tag * list
+scoreboard players tag * remove <name: string>
+scoreboard players tag <target: entities> add <name: string>
+scoreboard players tag <target: entities> list
+scoreboard players tag <target: entities> remove <name: string>
+scoreboard players test * <objective: string> <min: int>
+scoreboard players test * <objective: string> <min: int> <max: int>
+scoreboard players test <target: entities> <objective: string> <min: int>
+scoreboard players test <target: entities> <objective: string> <min: int> <max: int>
+scoreboard teams add <team: string>
+scoreboard teams add <team: string> <display name: string>
+scoreboard teams empty <team: string>
+scoreboard teams join <team: string>
+scoreboard teams join <team: string> *
+scoreboard teams join <team: string> <members: entities>
+scoreboard teams leave *
+scoreboard teams leave <members: entities>
+scoreboard teams list
+scoreboard teams list <team: string>
+scoreboard teams option <team: string> collisionRule always
+scoreboard teams option <team: string> collisionRule never
+scoreboard teams option <team: string> collisionRule pushOtherTeams
+scoreboard teams option <team: string> collisionRule pushOwnTeam
+scoreboard teams option <team: string> color <value: id>
+scoreboard teams option <team: string> deathMessageVisibility always
+scoreboard teams option <team: string> deathMessageVisibility hideForOtherTeams
+scoreboard teams option <team: string> deathMessageVisibility hideForOwnTeam
+scoreboard teams option <team: string> deathMessageVisibility never
+scoreboard teams option <team: string> friendlyfire <value: bool>
+scoreboard teams option <team: string> nametagVisibility always
+scoreboard teams option <team: string> nametagVisibility hideForOtherTeams
+scoreboard teams option <team: string> nametagVisibility hideForOwnTeam
+scoreboard teams option <team: string> nametagVisibility never
+scoreboard teams option <team: string> seeFriendlyInvisibles <value: bool>
+scoreboard teams remove <team: string>
+seed
+setblock <pos: x y z> <block: block>
+setblock <pos: x y z> <block: block> destroy
+setblock <pos: x y z> <block: block> keep
+setblock <pos: x y z> <block: block> replace
+setidletimeout <seconds: int>
+setworldspawn
+setworldspawn <pos: x y z>
+spawnpoint
+spawnpoint <target: players>
+spawnpoint <target: players> <spawnPos: x y z>
+spreadplayers <center: x z> <spreadDistance: float> <maxRange: float> <respectTeams: bool> <victims: entities>
+stop
+stopsound <target: players>
+stopsound <target: players> ambient
+stopsound <target: players> ambient <name: id>
+stopsound <target: players> block
+stopsound <target: players> block <name: id>
+stopsound <target: players> hostile
+stopsound <target: players> hostile <name: id>
+stopsound <target: players> master
+stopsound <target: players> master <name: id>
+stopsound <target: players> music
+stopsound <target: players> music <name: id>
+stopsound <target: players> neutral
+stopsound <target: players> neutral <name: id>
+stopsound <target: players> player
+stopsound <target: players> player <name: id>
+stopsound <target: players> record
+stopsound <target: players> record <name: id>
+stopsound <target: players> voice
+stopsound <target: players> voice <name: id>
+stopsound <target: players> weather
+stopsound <target: players> weather <name: id>
+summon <name: id>
+summon <name: id> <pos: x y z>
+summon <name: id> <pos: x y z> <nbt: nbt>
+teleport <pos: x y z>
+teleport <pos: x y z> <rotation: x y>
+teleport <target: entity>
+teleport <victims: entities> <pos: x y z>
+teleport <victims: entities> <pos: x y z> <rotation: x y>
+teleport <victims: entities> <target: entity>
+tell -> msg
+tellraw <target: player> <message: json>
+time add <time: int>
+time query day
+time query daytime
+time query gametime
+time set day
+time set night
+time set <time: int>
+title <targets: players> actionbar <title: json>
+title <targets: players> clear
+title <targets: players> reset
+title <targets: players> subtitle <title: json>
+title <targets: players> times <fadeIn: int> <stay: int> <fadeOut: int>
+title <targets: players> title <title: json>
+toggledownfall
+tp -> teleport
+trigger <objective: string> add <value: int>
+trigger <objective: string> set <value: int>
+w -> msg
+weather clear
+weather clear <duration: int>
+weather rain
+weather rain <duration: int>
+weather thunder
+weather thunder <duration: int>
+whitelist add <players: players>
+whitelist list
+whitelist off
+whitelist on
+whitelist reload
+whitelist remove <players: players>
+worldborder add <distance: int>
+worldborder add <distance: int> <time: int>
+worldborder center <pos: x z>
+worldborder damage amount <damagePerBlock: float>
+worldborder damage buffer <distance: float>
+worldborder get
+worldborder set <distance: int>
+worldborder set <distance: int> <time: int>
+worldborder warning distance <distance: int>
+worldborder warning time <time: int>
+xp <experience: int>
+xp <experience: int> <entities: entities>
+xp <levels: int>L
+xp <levels: int>L <entities: entities>

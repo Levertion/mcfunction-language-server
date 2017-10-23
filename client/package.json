@@ -45,7 +45,7 @@
 					"scope": "resource",
 					"type": "string",
 					"default": "",
-					"description": "The path to the set of commands to use. The file must have commands on one line as in https://gist.github.com/Dinnerbone/943fbcd763c19be188ed6b72a12d7e65/a7ecc4cfb1d12b66aeb6d4e7f643bec227f0d4f7"
+					"description": "The path to the set of commands to use. The file must have commands on each line as in https://gist.github.com/Dinnerbone/943fbcd763c19be188ed6b72a12d7e65/a7ecc4cfb1d12b66aeb6d4e7f643bec227f0d4f7. This path is first checked relative to the workspace root, then as an absolute path. If this is not a file, extension falls back to version as defined in the extension"
 				}
 			}
 		},

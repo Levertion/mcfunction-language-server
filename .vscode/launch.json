@@ -13,7 +13,8 @@
 			"stopOnEntry": false,
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceRoot}/client/out/**/*.js"
+				"${workspaceRoot}/client/out/**/*.js",
+				"${workspaceRoot}/client/server/**/*.js"
 			],
 			"preLaunchTask": "watch:client"
 		},
