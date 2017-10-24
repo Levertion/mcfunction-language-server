@@ -16,7 +16,7 @@
         "offSide": false,
         "markers": {
             "start": "^#[Ss]ection",
-            "end": "^[eE]nd[Ss]ection"
+            "end": "^#[eE]nd[Ss]ection"
         }
     },
     "surroundingPairs": [

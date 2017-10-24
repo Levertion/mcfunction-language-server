@@ -8,27 +8,25 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceRoot}/client"
+				"--extensionDevelopmentPath=${workspaceRoot}"
 			],
 			"stopOnEntry": false,
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceRoot}/client/out/**/*.js",
-				"${workspaceRoot}/client/server/**/*.js"
+				"${workspaceRoot}/out/**/*.js"
 			],
-			"preLaunchTask": "watch:client"
+			"preLaunchTask": "watch"
 		},
 		{
 			"name": "Attach to Server",
 			"type": "node",
 			"request": "attach",
-			"port": 6009,
+			"port": 25560,
 			"sourceMaps": true,
 			"outFiles": [
 				"${workspaceRoot}/client/server/**/*.js"
 			],
-			"protocol": "legacy",
-			"preLaunchTask": "watch:server"
+			"protocol": "auto"
 		}
 	]
 }

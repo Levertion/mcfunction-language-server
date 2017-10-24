@@ -10,9 +10,9 @@ import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } f
 
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
-	let serverModule = context.asAbsolutePath(path.join('server', 'server.js'));
+	let serverModule = context.asAbsolutePath(path.join('out', 'server.js'));
 	// The debug options for the server
-	let debugOptions = { execArgv: ["--nolazy", "--debug=6009"] };
+	let debugOptions = { execArgv: ["--nolazy", "--debug=25560"] };
 
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
@@ -36,8 +36,7 @@ export function activate(context: ExtensionContext) {
 	}
 
 	// Create the language client and start the client.
-	let disposable: any = new LanguageClient('mcfunction', 'Minecraft Function Server', serverOptions, clientOptions, true)
-	disposable = disposable.start();
+	let disposable = new LanguageClient('mcfunction', 'Minecraft Function Server', serverOptions, clientOptions, true).start();
 	// Push the disposable to the context's subscriptions so that the 
 	// client can be deactivated on extension deactivation
 	context.subscriptions.push(disposable);

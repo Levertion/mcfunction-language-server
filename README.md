@@ -1,21 +1,32 @@
-# README
-## This is the README for the "languageprovider-sample" 
--------------------
+# Levertion mcfunction README
+An extension to bring support for [Minecraft Function](https://minecraft.gamepedia.com/function) files to [vscode](https://code.visualstudio.com/)
+Only supports 1.13 (Unreleased as of 23/10/2017) commands, as explained in [this changelog](https://gist.github.com/Dinnerbone/943fbcd763c19be188ed6b72a12d7e65#file-wip_changelog-md)
+Which commands are supported is data driven, as well as names and blocks with states, thanks to [Tryashtar](https://www.youtube.com/c/tryashtar)'s [list](https://gist.github.com/tryashtar/4c78c2805649ce76f25c138d113c86d1)
 
-This folder contains a sample VS code extension that demonstrates an extension that runs a language server
+## Features
 
-The extension observes all 'plaintext' documents (documents from all editors not associated with a language)
-and uses the server to provide validation and completion proposals.
+Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
-The code for the extension is in the 'client' folder. It uses the 'vscode-languageclient' node module to launch the language server.
+For example if there is an image subfolder under your extension project workspace:
 
-The language server is located in the 'server' folder. 
+\!\[feature X\]\(images/feature-x.png\)
 
+> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
-# How to run locally
-* `npm install` to initialize the extension and the server
-* `npm run compile` to compile the extension and the server
-* open this folder in VS Code. In the Debug viewlet, run 'Launch Client' from drop-down to launch the extension and attach to the extension.
-* create a file `test.txt`, and type `typescript`. You should see a validation error.
-* to debug the server use the 'Attach to Server' launch config.
-* set breakpoints in the client or the server.
+## Requirements
+
+If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+
+## Extension Settings
+
+This extension contributes the following settings:
+
+* `mcfunction.commandsFilePath`: where the commands are taken from
+
+## Known Issues
+
+Does not support syntax highlighting. This issue would be solvable after if [Microsoft/language-server-protocol#124](https://github.com/Microsoft/language-server-protocol/pull/124) gets pulled
+
+## Release Notes
+
+No releases
