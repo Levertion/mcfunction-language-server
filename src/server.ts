@@ -123,7 +123,6 @@ connection.onDidChangeConfiguration((change) => {
 
 	commands = existsSync(commandsURI) ? readFileSync(commandsURI).toString().split(/\r?\n/g) : [""];
 	for (var s = 0; s < commands.length; s++) {
-		connection.console.log(s.toString());
 		parts[s] = interpret(commands[s]);
 	}
 	// Revalidate any open text documents
@@ -132,39 +131,44 @@ connection.onDidChangeConfiguration((change) => {
 connection.console.log("Configuration changer installed");
 
 function interpret(command: string): interpretedCommand {
+	connection.console.log(`Interpreting ${command}`);
 	let intParts: part[] = [];
-	let equiv: RegExpExecArray = /-> (.+)/.exec(command) || <RegExpExecArray>[];
-	if (equiv.length > 0) {
+	let equiv: RegExpExecArray = /-> (.+)/.exec(command);
+	if (equiv) {
 		command = command.substring(0, command.length - equiv[0].length);
 		var as: string = equiv[1];
 	}
 	while (command.length > 0) {
+		connection.console.log(`Inside while loop when command is ${command}`);
 		let lenChange: number;
 		let sections: RegExpExecArray, section: string;
-		switch (/[ <\[]/.exec(command)[0]) {
+		switch (/[ <\[]|$/.exec(command)[0]) {
 			case "<":
+				connection.console.log("Checking for argument");
 				sections = /(.+?)> ?/.exec(command);
 				section = sections[1];
-				let split = section.split(": ?");
+				let split = section.split(/: ?/);
 				intParts.push({ name: split[0].substring(1), type: getPartType(split[1]) });
 				lenChange = sections[0].length;
 				break;
 			case "[":
-				sections = /(.+?)] ?/.exec(command);
+				connection.console.log("Checking for optional");
+				sections = /(.+?)\] ?/.exec(command);
 				section = sections[1];
 				section = section.substring(1);
 				intParts.push({ type: "optional", name: section, optionals: interpret(section).parts });
 				lenChange = sections[0].length;
 				break;
 			default:
-				sections = /(.+)[ $]/.exec(command)
+				connection.console.log("Checking for literal");
+				sections = /(.+?)(?: |$)/.exec(command);
 				intParts.push({ type: "literal", name: (sections[1]) });
 				lenChange = sections[0].length;
 				break;
 		}
 		command = command.substring(lenChange);
 	}
-	return { as: as, parts: intParts };
+	return { as, parts: intParts };
 }
 
 // function getMatchingCommands(sections: commandSection[]): commandPart[] { }
