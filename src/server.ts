@@ -57,10 +57,11 @@ interface mcfunctionSettings {
 
 interface subValidatorReturn {
 	diagnostics: Diagnostic[],
-	charIncrease: number
+	charIncrease: number,
+	sections?: section[]
 }
 
-type partType = "literal" | "entities" | "entity" | "players" | "string" | "id" | "x y z" | "x y" | "x z" | "nbt" | "item" | "int" | "bool" | "block" | "x y" | "float" | "json" | "player";
+type partType = "literal" | "entities" | "entity" | "players" | "string" | "id" | "x y z" | "x y" | "x z" | "nbt" | "item" | "int" | "bool" | "block" | "x y" | "float" | "json" | "player" | "optional";
 
 interface interpretedCommand {
 	as?: string,
@@ -69,15 +70,17 @@ interface interpretedCommand {
 
 interface part {
 	name: string,
-	type: partType
+	type: partType,
+	optionals?: part[]
 }
 
 interface section {
 	part: part,
-	literal: string
+	literal: string,
+	subSections?: section[]
 }
 function getPartType(type: string): partType {
-	if (["literal", "entities", "entity", "players", "string", "id", "x y z", "x y", "x z", "nbt", "item", "int", "bool", "block", "float", "json", "player"].includes(type)) {
+	if (["entities", "entity", "players", "string", "id", "x y z", "x y", "x z", "nbt", "item", "int", "bool", "block", "float", "json", "player"].includes(type)) {
 		return <partType>type;
 	}
 	else {
@@ -115,21 +118,33 @@ connection.console.log("Configuration changer installed");
 function interpret(command: string): interpretedCommand {
 	let intParts: part[] = [];
 	let equiv: RegExpExecArray = /-> (.+)/.exec(command) || <RegExpExecArray>[];
-	connection.console.log(equiv.join("|"));
 	if (equiv.length > 0) {
 		command = command.substring(0, command.length - equiv[0].length);
 		var as: string = equiv[1];
 	}
 	while (command.length > 0) {
 		let lenChange: number;
-		if (command.indexOf(" ") < (command.indexOf("<") != -1 ? command.indexOf("<") : command.length + 1)) {
-			intParts.push({ type: "literal", name: command.split(/ /)[0] });
-			lenChange = intParts[intParts.length - 1].name.length + 1;
-		} else {
-			let section = command.split(/> ?/)[0];
-			let split = section.split(": ");
-			intParts.push({ name: split[0].substring(1), type: getPartType(split[1]) });
-			lenChange = section.length + 2;
+		let sections: RegExpExecArray, section: string;
+		switch (/[ <\[]/.exec(command)[0]) {
+			case "<":
+				sections = /(.+?)> ?/.exec(command);
+				section = sections[1];
+				let split = section.split(": ?");
+				intParts.push({ name: split[0].substring(1), type: getPartType(split[1]) });
+				lenChange = sections[0].length;
+				break;
+			case "[":
+				sections = /(.+?)] ?/.exec(command);
+				section = sections[1];
+				section = section.substring(1);
+				intParts.push({ type: "optional", name: section, optionals: interpret(section).parts });
+				lenChange = sections[0].length;
+				break;
+			default:
+				sections = /(.+)[ $]/.exec(command)
+				intParts.push({ type: "literal", name: (sections[1]) });
+				lenChange = sections[0].length;
+				break;
 		}
 		command = command.substring(lenChange);
 	}
