@@ -9,7 +9,7 @@ import {
 	//DiagnosticSeverity
 } from 'vscode-languageserver';
 import { readFileSync, existsSync } from 'fs';
-import { join, normalize } from 'path';
+import * as path from 'path';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport
 let connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
@@ -95,13 +95,13 @@ let parts: interpretedCommand[] = [];
 connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
 	maxNumberOfProblems = settings.mcfunction.maxNumberOfProblems || 100;
-	let fallbackURI = join(__dirname, "..", "commands", "minecraft_commands.txt");
+	let fallbackURI = path.join(__dirname, "..", "commands", "minecraft_commands.txt");
 	let commandsURI: string = settings.mcfunction.commandsFilePath ? //If the setting is set
-		existsSync(normalize(settings.mcfunction.commandsFilePath)) ? //If it is a resolving filepath
+		existsSync(path.normalize(settings.mcfunction.commandsFilePath)) ? //If it is a resolving filepath
 			settings.mcfunction.commandsFilePath : //URI is the value of the setting
 			workspaceRoot ?
-				existsSync(join(workspaceRoot, settings.mcfunction.commandsFilePath)) ?  //If it a relative URI from the wordspaceRoot
-					join(workspaceRoot, settings.mcfunction.commandsFilePath) : fallbackURI : fallbackURI : fallbackURI; //It is the relative URI; else useBuiltin to extension 
+				existsSync(path.join(workspaceRoot, settings.mcfunction.commandsFilePath)) ?  //If it a relative URI from the wordspaceRoot
+					path.join(workspaceRoot, settings.mcfunction.commandsFilePath) : fallbackURI : fallbackURI : fallbackURI; //It is the relative URI; else useBuiltin to extension 
 	commands = existsSync(commandsURI) ? readFileSync(commandsURI).toString().split(/\r?\n/g) : [""];
 	for (var s = 0; s < commands.length; s++) {
 		connection.console.log(s.toString());
