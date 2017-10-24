@@ -99,12 +99,28 @@ connection.onDidChangeConfiguration((change) => {
 	let settings = <Settings>change.settings;
 	maxNumberOfProblems = settings.mcfunction.maxNumberOfProblems || 100;
 	let fallbackURI = path.join(__dirname, "..", "commands", "minecraft_commands.txt");
-	let commandsURI: string = settings.mcfunction.commandsFilePath ? //If the setting is set
-		existsSync(path.normalize(settings.mcfunction.commandsFilePath)) ? //If it is a resolving filepath
-			settings.mcfunction.commandsFilePath : //URI is the value of the setting
-			workspaceRoot ?
-				existsSync(path.join(workspaceRoot, settings.mcfunction.commandsFilePath)) ?  //If it a relative URI from the wordspaceRoot
-					path.join(workspaceRoot, settings.mcfunction.commandsFilePath) : fallbackURI : fallbackURI : fallbackURI; //It is the relative URI; else useBuiltin to extension 
+
+	let commandsURI: string;
+	if(settings.mcfunction.commandsFilePath !== null) { //If the setting is set
+		let normalizedPath = path.normalize(settings.mcfunction.commandsFilePath);
+		if(existsSync(normalizedPath)) { //If it is a resolving filepath
+			commandsURI = normalizedPath; //URI is the value of the setting
+		} else {
+			if(workspaceRoot !== null) { //If a folder is open
+				let joinedPath = path.join(workspaceRoot, settings.mcfunction.commandsFilePath);
+				if(existsSync(joinedPath)) { //If it is a relative URI from the workspaceRoot
+					commandsURI = joinedPath; //Set the URI to this value
+				} else {
+					commandsURI = fallbackURI; //In all other cases, use the fallback URI
+				}
+			} else {
+				commandsURI = fallbackURI;
+			}
+		}
+	} else {
+		commandsURI = fallbackURI;
+	}
+
 	commands = existsSync(commandsURI) ? readFileSync(commandsURI).toString().split(/\r?\n/g) : [""];
 	for (var s = 0; s < commands.length; s++) {
 		connection.console.log(s.toString());
