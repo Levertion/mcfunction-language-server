@@ -1,0 +1,20 @@
+{
+    "description": "An implementation of the language server protocol for Minecraft Commands.",
+    "name": "mcfunction-language-server",
+    "version": "0.0.1",
+    "author": "Levertion",
+    "devDependencies": {
+        "@types/node": "^8.0.50",
+        "typescript": "^2.6.1"
+    },
+    "license": "MIT",
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Levertion/mcfunction-language-server"
+    },
+    "scripts": {
+        "compile:server": "tsc -p ./server/tsconfig.json",
+        "compile:client": "tsc -p ./client/tsconfig.json"
+    }
+}
