@@ -4,11 +4,32 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Compile Server",
             "type": "npm",
             "script": "compile:server",
             "problemMatcher": [
                 "$tsc"
             ]
+        },
+        {
+            "label": "Compile Client",
+            "type": "npm",
+            "script": "compile:client",
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "dependsOn": [
+                "Compile Client",
+                "Compile Server"
+            ],
+            "label": "Compile",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
