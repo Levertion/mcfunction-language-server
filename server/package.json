@@ -1,12 +1,8 @@
 {
-    "description": "A typescript implementation of a language server for Minecraft Commands, with a vscode extension.",
     "name": "mcfunction-language-server",
+    "description": "An implementation of the language server protocol for Minecraft Commands.",
     "version": "0.0.1",
     "author": "Levertion",
-    "devDependencies": {
-        "@types/node": "^8.0.50",
-        "typescript": "^2.6.1"
-    },
     "license": "MIT",
     "private": true,
     "repository": {
@@ -16,5 +12,11 @@
     "scripts": {
         "compile:server": "tsc -p ./server/tsconfig.json",
         "compile:client": "tsc -p ./client/tsconfig.json"
+    },
+    "dependencies": {
+        "vscode-languageserver": "^3.5.0"
+    },
+    "engines": {
+        "node": "*"
     }
 }
