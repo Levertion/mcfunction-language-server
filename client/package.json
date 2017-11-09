@@ -1,7 +1,8 @@
 {
     "dependencies": {
         "vscode": "^1.1.6",
-        "vscode-languageclient": "^3.5.0"
+        "vscode-languageclient": "^3.5.0",
+        "vscode-languageserver": "^3.5.0"
     },
     "description": "A typescript implementation of a language server for Minecraft Commands, with a vscode extension.",
     "name": "mcfunction",
@@ -21,5 +22,25 @@
         "compile:server": "tsc -p ./server/tsconfig.json",
         "compile:client": "tsc -p ./client/tsconfig.json",
         "postinstall": "node ./node_modules/vscode/bin/install"
-    }
+    },
+    "contributes": {
+        "languages": [
+            {
+                "aliases": [
+                    "Minecraft Function",
+                    "mcfunction",
+                    "mcc"
+                ],
+                "configuration": "./language-configuration.json",
+                "extensions": [
+                    ".mcfunction"
+                ],
+                "id": "mcfunction"
+            }
+        ]
+    },
+    "activationEvents": [
+        "onLanguage:mcfunction"
+    ],
+    "main": "out/extension"
 }
