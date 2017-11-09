@@ -5,7 +5,11 @@
         "sourceMap": true,
         "alwaysStrict": true,
         "target": "es6",
-        "moduleResolution": "node"
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "lib": [
+            "es6"
+        ],
     },
     "exclude": [
         "node_modules"
