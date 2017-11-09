@@ -11,7 +11,7 @@
     "license": "MIT",
     "private": true,
     "engines": {
-        "vscode": "^0.18.0"
+        "vscode": "^1.18.0"
     },
     "repository": {
         "type": "git",
