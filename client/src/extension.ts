@@ -20,13 +20,14 @@ function sortedWorkspaceFolders(): string[] {
     if (_sortedWorkspaceFolders === void 0) {
         _sortedWorkspaceFolders = Workspace.workspaceFolders.map(folder => {
             let result = folder.uri.toString();
+            // Ensure ends with consistent character
             if (result.charAt(result.length - 1) !== '/') {
                 result = result + '/';
             }
             return result;
         }).sort(
             (a, b) => {
-                return a.length - b.length;
+                return a.length - b.length; //Sort in length order with longest first(?)
             }
             );
     }
@@ -50,12 +51,12 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 
 export function activate(context: ExtensionContext) {
 
-    let module = context.asAbsolutePath(path.join('server', 'server.js'));
-    let outputChannel: OutputChannel = Window.createOutputChannel('lsp-multi-server-example');
+    let module = context.asAbsolutePath(path.join('out', 'server', 'index.js'));
+    let outputChannel: OutputChannel = Window.createOutputChannel('Minecraft Functions');
 
     function didOpenTextDocument(document: TextDocument): void {
-        // We are only interested in language mode text
-        if (document.languageId !== 'plaintext' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
+        // We are only interested in mcfunction files
+        if (document.languageId !== 'mcfunction' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
             return;
         }
 
@@ -71,11 +72,10 @@ export function activate(context: ExtensionContext) {
                 documentSelector: [
                     { scheme: 'untitled', language: 'plaintext' }
                 ],
-                diagnosticCollectionName: 'multi-lsp',
+                diagnosticCollectionName: 'mcfunction-lsp',
                 outputChannel: outputChannel
             }
-            defaultClient = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
-            defaultClient.registerProposedFeatures();
+            defaultClient = new LanguageClient('mcfunction-lsp', 'Minecraft Function Language Server', serverOptions, clientOptions);
             defaultClient.start();
             return;
         }
@@ -96,14 +96,13 @@ export function activate(context: ExtensionContext) {
             };
             let clientOptions: LanguageClientOptions = {
                 documentSelector: [
-                    { scheme: 'file', language: 'plaintext', pattern: `${folder.uri.fsPath}/**/*` }
+                    { scheme: 'file', language: 'mcfunction', pattern: `${folder.uri.fsPath}/**/*` }
                 ],
-                diagnosticCollectionName: 'lsp-multi-server-example',
+                diagnosticCollectionName: 'mcfunction-lsp',
                 workspaceFolder: folder,
                 outputChannel: outputChannel
             }
-            let client = new LanguageClient('lsp-multi-server-example', 'LSP Multi Server Example', serverOptions, clientOptions);
-            client.registerProposedFeatures();
+            let client = new LanguageClient('mcfunction-lsp', 'Minecraft Function Language Server', serverOptions, clientOptions);
             client.start();
             clients.set(folder.uri.toString(), client);
         }
