@@ -4,13 +4,14 @@
         "vscode-languageclient": "^3.5.0",
         "vscode-languageserver": "^3.5.0"
     },
-    "description": "A typescript implementation of a language server for Minecraft Commands, with a vscode extension.",
+    "description": "Minecraft Command validation",
     "name": "mcfunction",
     "version": "0.0.1",
     "author": "Levertion",
     "publisher": "Levertion",
     "license": "MIT",
     "private": true,
+    "preview": true,
     "engines": {
         "vscode": "^1.18.0"
     },

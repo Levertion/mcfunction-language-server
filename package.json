@@ -15,6 +15,7 @@
     },
     "scripts": {
         "compile:server": "tsc -p ./server/tsconfig.json",
-        "compile:client": "tsc -p ./client/tsconfig.json"
+        "compile:client": "tsc -p ./client/tsconfig.json",
+        "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
     }
 }
