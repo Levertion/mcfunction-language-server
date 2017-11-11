@@ -7,21 +7,22 @@
 'use strict';
 
 import {
-    createConnection, TextDocuments, ProposedFeatures, TextDocumentSyncKind
+    createConnection, TextDocuments
 } from 'vscode-languageserver';
+import { IPCMessageReader } from 'vscode-jsonrpc/lib/messageReader';
+import { IPCMessageWriter } from 'vscode-jsonrpc';
+import { } from './types';
 
 // Creates the LSP connection
-let connection = createConnection(ProposedFeatures.all);
-// Create a manager for open text documents
+let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 
+// Create a manager for open text documents
 let documents = new TextDocuments();
 
 // The workspace folder this server is operating on
 let workspaceFolder: string;
 
-documents.onDidOpen((event) => {
-    connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`);
-})
+
 documents.listen(connection);
 
 connection.onInitialize((params) => {
@@ -31,9 +32,13 @@ connection.onInitialize((params) => {
         capabilities: {
             textDocumentSync: {
                 openClose: true,
-                change: TextDocumentSyncKind.None
+                change: documents.syncKind
             }
         }
     }
 });
 connection.listen();
+
+documents.onDidOpen((event) => {
+    connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`);
+})
