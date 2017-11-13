@@ -1,14 +1,14 @@
 import { format } from "util";
 
-interface mcError {
-    description?: string
+export interface mcError {
+    description: string
     computed: string
     type: string
     start: number
     end: number
 }
 
-class mcError implements mcError {
+export class mcError implements mcError {
     constructor(start: number, end?: number, ...formatting: string[]) {
         this.computed = format(this.description, formatting);
         this.start = start;
