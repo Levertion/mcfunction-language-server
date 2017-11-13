@@ -11,7 +11,6 @@ import {
 } from 'vscode-languageserver';
 import { IPCMessageReader } from 'vscode-jsonrpc/lib/messageReader';
 import { IPCMessageWriter } from 'vscode-jsonrpc';
-import { } from './types';
 
 // Creates the LSP connection
 let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
