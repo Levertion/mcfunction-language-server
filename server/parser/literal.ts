@@ -1,8 +1,7 @@
-import { Argument } from "./arguments";
-import { StringReader } from "../string-reader";
-import { LiteralExceptions } from "./argument-exceptions";
+import { StringReader } from "./string-reader";
+import { LiteralExceptions } from "./literal-exceptions";
 
-export class LiteralArgument implements Argument {
+export class LiteralArgument {
     private literal: string;
     parse(reader: StringReader) {
         let start = reader.cursor;
@@ -20,7 +19,12 @@ export class LiteralArgument implements Argument {
         this.literal = value;
     }
     //@ts-ignore Reader is required to be given to be consistent, but in this case should just be ignored
-    listSuggestions(reader: StringReader) {
-        return [this.literal];
+    listSuggestions(start: string) {
+        if (this.literal.startsWith(start)) {
+            return [this.literal];
+        }
+        else {
+            return [];
+        }
     }
 }
