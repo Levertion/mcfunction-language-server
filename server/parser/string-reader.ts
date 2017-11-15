@@ -85,7 +85,6 @@ export class StringReader {
     }
     /**
      * Read an integer from the string
-     * @throws {mcError}
      */
     readInt(): number {
         let start: number = this.cursor;
@@ -105,7 +104,6 @@ export class StringReader {
     }
     /**
      * Read float from the string
-     * @throws {mcError}
      */
     readDouble(): number {
         let start: number = this.cursor;
