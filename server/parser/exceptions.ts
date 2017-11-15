@@ -8,7 +8,7 @@ export interface mcError {
     end: number
 }
 
-export class mcError implements mcError {
+export abstract class mcError implements mcError {
     constructor(start: number, end?: number, ...formatting: string[]) {
         this.computed = format(this.description, formatting);
         this.start = start;

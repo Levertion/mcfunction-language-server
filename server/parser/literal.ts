@@ -1,27 +1,34 @@
 import { StringReader } from "./string-reader";
-import { LiteralExceptions } from "./literal-exceptions";
+import { Properties, Argument } from "./arguments";
+import { mcError } from "./exceptions";
 
-export class LiteralArgument {
-    private literal: string;
-    parse(reader: StringReader) {
+export namespace LiteralExceptions {
+    export class IncorrectLiteral extends mcError {
+        description = "Expected literal %s, got %s";
+        type = "argument.literal.incorrect";
+        constructor(start: number, expected: string, got: string) {
+            super(start, null, expected, got);
+        }
+    }
+}
+
+
+export class LiteralArgument extends Argument {
+    static parse(reader: StringReader, properties: Properties) {
         let start = reader.cursor;
-        for (let index = 0; index < this.literal.length; index++) {
-            if (reader.canRead() && this.literal.charAt(index) == reader.peek()) {
+        for (let index = 0; index < properties.key.length; index++) {
+            if (reader.canRead() && properties.key.charAt(index) == reader.peek()) {
                 reader.skip();
             }
             else {
                 reader.cursor = start;
-                throw new LiteralExceptions.IncorrectLiteral(start, this.literal, reader.string.substring(start, reader.cursor));
+                throw new LiteralExceptions.IncorrectLiteral(start, properties.key, reader.string.substring(start, reader.cursor));
             }
         }
     }
-    constructor(value: string) {
-        this.literal = value;
-    }
-    //@ts-ignore Reader is required to be given to be consistent, but in this case should just be ignored
-    listSuggestions(start: string) {
-        if (this.literal.startsWith(start)) {
-            return [this.literal];
+    static listSuggestions(start: string, properties: Properties) {
+        if (properties.key.startsWith(start)) {
+            return [properties.key];
         }
         else {
             return [];
