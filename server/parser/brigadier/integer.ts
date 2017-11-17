@@ -1,8 +1,8 @@
-import { Argument, Properties } from "../arguments";
+import { Arg, Properties } from "../arguments";
 import { McError } from "../exceptions";
 import { StringReader } from "../string-reader";
 
-export interface IntegerProperties extends Properties {
+interface IntegerProperties extends Properties {
     max: number;
     min: number;
 }
@@ -10,7 +10,7 @@ export interface IntegerProperties extends Properties {
 const JAVAMIN = -2147483648;
 const JAVAMAX = 2147483647;
 
-export namespace IntegerExceptions {
+namespace IntegerExceptions {
     export class IntegerTooLow extends McError {
         public description = "Integer must not be less than %s, found %s";
         public type = "argument.integer.low";
@@ -27,8 +27,8 @@ export namespace IntegerExceptions {
     }
 }
 
-export class IntegerArgument extends Argument {
-    public static parse(reader: StringReader, properties: IntegerProperties) {
+export let IntegerArgument: Arg = {
+    parse: (reader: StringReader, properties: IntegerProperties) => {
         const start = reader.cursor;
         const readNumber = reader.readInt();
         const min = properties.min || JAVAMIN;
@@ -40,8 +40,8 @@ export class IntegerArgument extends Argument {
             throw new IntegerExceptions.IntegerTooHigh(start, reader.cursor, max, readNumber);
         }
         return readNumber;
-    }
-    public static listSuggestions() {
+    },
+    listSuggestions: () => {
         return [] as string[];
-    }
-}
+    },
+};

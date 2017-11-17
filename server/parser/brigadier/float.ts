@@ -1,4 +1,4 @@
-import { Argument, Properties } from "../arguments";
+import { Arg, Properties } from "../arguments";
 import { McError } from "../exceptions";
 import { StringReader } from "../string-reader";
 
@@ -10,7 +10,7 @@ export interface FloatProperties extends Properties {
 const JAVAMIN = -2147483648;
 const JAVAMAX = 2147483647;
 
-export namespace FloatExceptions {
+namespace FloatExceptions {
     export class FloatTooLow extends McError {
         public description = "Float must not be less than %s, found %s";
         public type = "argument.float.low";
@@ -27,8 +27,8 @@ export namespace FloatExceptions {
     }
 }
 
-export class FloatArgument extends Argument {
-    public static parse(reader: StringReader, properties: FloatProperties) {
+export let FloatArgument: Arg = {
+    parse: (reader: StringReader, properties: FloatProperties) => {
         const start = reader.cursor;
         const readNumber = reader.readDouble();
         const min = properties.min || JAVAMIN;
@@ -40,8 +40,8 @@ export class FloatArgument extends Argument {
             throw new FloatExceptions.FloatTooHigh(start, reader.cursor, max, readNumber);
         }
         return readNumber;
-    }
-    public static listSuggestions() {
+    },
+    listSuggestions: () => {
         return [] as string[];
-    }
-}
+    },
+};

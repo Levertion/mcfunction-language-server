@@ -15,8 +15,7 @@ export interface Properties {
      */
     key: string;
 }
-
-export abstract class Argument {
-    public static parse: (reader: StringReader, properties?: Properties) => void;
-    public static listSuggestions: (start?: string, properties?: Properties) => string[];
+export interface Arg {
+    parse: (reader: StringReader, properties?: Properties) => void;
+    listSuggestions: (start?: string, properties?: Properties) => string[];
 }

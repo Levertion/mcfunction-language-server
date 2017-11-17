@@ -1,4 +1,4 @@
-import { Argument, Properties } from "../arguments";
+import { Argument, Properties, Arg } from "../arguments";
 import { StringReader } from "../string-reader";
 
 enum StringType {
@@ -10,8 +10,8 @@ export interface StringProperties extends Properties {
     type: StringTypeKey;
 }
 
-export class StringArgument extends Argument {
-    public static parse(reader: StringReader, properties: StringProperties) {
+export let StringArgument: Arg = {
+    parse: (reader: StringReader, properties: StringProperties) => {
         const type = StringType[properties.type];
         switch (type) {
             case StringType.greedy:
@@ -24,8 +24,8 @@ export class StringArgument extends Argument {
                 reader.readString();
                 break;
         }
-    }
-    public static listSuggestions() {
+    },
+    listSuggestions: () => {
         return [] as string[];
-    }
-}
+    },
+};
