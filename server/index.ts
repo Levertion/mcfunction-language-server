@@ -4,23 +4,22 @@
  * Origin under the MIT license: Copyright (C) Microsoft Corporation. All rights reserved.
  * This version under the MIT license as in the project root
  *-------------------------------------------------------*/
-'use strict';
+"use strict";
 
+import { IPCMessageWriter } from "vscode-jsonrpc";
+import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
 import {
-    createConnection, TextDocuments
-} from 'vscode-languageserver';
-import { IPCMessageReader } from 'vscode-jsonrpc/lib/messageReader';
-import { IPCMessageWriter } from 'vscode-jsonrpc';
+    createConnection, TextDocuments,
+} from "vscode-languageserver";
 
 // Creates the LSP connection
-let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 
 // Create a manager for open text documents
-let documents = new TextDocuments();
+const documents = new TextDocuments();
 
 // The workspace folder this server is operating on
 let workspaceFolder: string;
-
 
 documents.listen(connection);
 
@@ -31,13 +30,13 @@ connection.onInitialize((params) => {
         capabilities: {
             textDocumentSync: {
                 openClose: true,
-                change: documents.syncKind
-            }
-        }
-    }
+                change: documents.syncKind,
+            },
+        },
+    };
 });
 connection.listen();
 
 documents.onDidOpen((event) => {
     connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`);
-})
+});

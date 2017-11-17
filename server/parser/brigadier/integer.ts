@@ -1,48 +1,47 @@
 import { Argument, Properties } from "../arguments";
+import { McError } from "../exceptions";
 import { StringReader } from "../string-reader";
-import { mcError } from "../exceptions";
 
 export interface IntegerProperties extends Properties {
-    max: number
-    min: number
+    max: number;
+    min: number;
 }
 
 const JAVAMIN = -2147483648;
 const JAVAMAX = 2147483647;
 
 export namespace IntegerExceptions {
-    export class IntegerTooLow extends mcError {
-        description = "Integer must not be less than %s, found %s";
-        type = "argument.integer.low";
+    export class IntegerTooLow extends McError {
+        public description = "Integer must not be less than %s, found %s";
+        public type = "argument.integer.low";
         constructor(start: number, end: number, expected: number, got: number) {
             super(start, end, expected.toString(), got.toString());
-        };
+        }
     }
-    export class IntegerTooHigh extends mcError {
-        description = "Integer must not be more than %s, found %s";
-        type = "argument.integer.big";
+    export class IntegerTooHigh extends McError {
+        public description = "Integer must not be more than %s, found %s";
+        public type = "argument.integer.big";
         constructor(start: number, end: number, expected: number, got: number) {
             super(start, end, expected.toString(), got.toString());
-        };
+        }
     }
 }
 
-
 export class IntegerArgument extends Argument {
-    static parse(reader: StringReader, properties: IntegerProperties) {
-        let start = reader.cursor;
-        let number = reader.readInt();
-        let min = properties.min || JAVAMIN;
-        let max = properties.max || JAVAMAX;
-        if (number > max) {
-            throw new IntegerExceptions.IntegerTooHigh(start, reader.cursor, min, number);
+    public static parse(reader: StringReader, properties: IntegerProperties) {
+        const start = reader.cursor;
+        const readNumber = reader.readInt();
+        const min = properties.min || JAVAMIN;
+        const max = properties.max || JAVAMAX;
+        if (readNumber > max) {
+            throw new IntegerExceptions.IntegerTooHigh(start, reader.cursor, min, readNumber);
         }
-        if (number < max) {
-            throw new IntegerExceptions.IntegerTooHigh(start, reader.cursor, max, number);
+        if (readNumber < max) {
+            throw new IntegerExceptions.IntegerTooHigh(start, reader.cursor, max, readNumber);
         }
-        return number;
+        return readNumber;
     }
-    static listSuggestions() {
-        return <string[]>[];
+    public static listSuggestions() {
+        return [] as string[];
     }
 }

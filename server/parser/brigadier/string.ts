@@ -7,12 +7,12 @@ enum StringType {
 // See https://github.com/Microsoft/TypeScript/issues/14106#issuecomment-280253269
 type StringTypeKey = keyof typeof StringType;
 export interface StringProperties extends Properties {
-    type: StringTypeKey
+    type: StringTypeKey;
 }
 
 export class StringArgument extends Argument {
-    static parse(reader: StringReader, properties: StringProperties) {
-        let type = StringType[properties.type];
+    public static parse(reader: StringReader, properties: StringProperties) {
+        const type = StringType[properties.type];
         switch (type) {
             case StringType.greedy:
                 reader.cursor = reader.string.length;
@@ -25,7 +25,7 @@ export class StringArgument extends Argument {
                 break;
         }
     }
-    static listSuggestions() {
-        return <string[]>[];
+    public static listSuggestions() {
+        return [] as string[];
     }
 }

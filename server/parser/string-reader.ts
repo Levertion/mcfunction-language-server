@@ -1,79 +1,157 @@
-import { StringReaderExceptions } from "./exceptions";
+import { McError } from "./exceptions";
+
+namespace StringReaderExceptions {
+    export class ExpectedInt extends McError {
+        public type = "parsing.int.expected";
+        public description = "An Integer was expected but null was found instead";
+        constructor(start: number) {
+            super(start, start);
+        }
+    }
+    export class InvalidInt extends McError {
+        public type = "parsing.int.invalid";
+        public description = "Invalid integer '%s'";
+        constructor(start: number, end: number, recieved: string) {
+            super(start, end, recieved);
+        }
+    }
+
+    export class ExpectedDouble extends McError {
+        public type = "parsing.double.expected";
+        public description = "A double was expected but null was found instead";
+        constructor(start: number) {
+            super(start, start);
+        }
+    }
+    export class InvalidDouble extends McError {
+        public type = "parsing.double.invalid";
+        public description = "Invalid double '%s'";
+        constructor(start: number, end: number, recieved: string) {
+            super(start, end, recieved);
+        }
+    }
+    export class ExpectedStartOfQuote extends McError {
+        public type = "parsing.quote.expected.start";
+        public description = "Expected quote to start a string";
+        constructor(start: number) {
+            super(start);
+        }
+    }
+    export class ExpectedEndOfQuote extends McError {
+        public type = "parsing.quote.expected.end";
+        public description = "Unclosed quoted string";
+        constructor(start: number) {
+            super(start);
+        }
+    }
+    export class InvalidEscape extends McError {
+        public type = "parsing.quote.escape";
+        public description = "Invalid escape sequence '\\%s' in quoted string";
+        constructor(start: number, character: string) {
+            super(start, null, character);
+        }
+    }
+    export class ExpectedBool extends McError {
+        public type = "parsing.bool.expected";
+        public description = "A boolean value was expected but null was found instead";
+        constructor(start: number) {
+            super(start);
+        }
+    }
+    export class InvalidBool extends McError {
+        public type = "parsing.bool.invalid";
+        public description = "Invalid boolean '%s'";
+        constructor(start: number, end: number, bool: string) {
+            super(start, end, bool);
+        }
+    }
+    export class ExpectedSymbol extends McError {
+        public type = "parsing.expected";
+        public description = "Expected %s, got %s";
+        constructor(start: number, end: number, expected: string, recieved: string) {
+            super(start, end, expected, recieved);
+        }
+    }
+}
 
 export class StringReader {
-    static SYNTAX_ESCAPE: string = '\\';
-    static SYNTAX_QUOTE: string = '"';
+    public static SYNTAX_ESCAPE: string = "\\";
+    public static SYNTAX_QUOTE: string = '"';
+    /**
+     * Is the given number a valid number character.
+     */
+    private static isAllowedNumber(c: string): boolean {
+        return /^[0-9\.-]$/.test(c);
+    }
+    /**
+     * Is the given character allowed in an unquoted string
+     */
+    private static isAllowedInUnquotedString(c: string) {
+        /^(?:[0-9]|[A-Z]|[a-z]|_|-|\.|\+)$/.test(c);
+    }
     /**
      * An integer which represents the current position in a string. This is a zero indexed length
      */
-    cursor: number;
+    public cursor: number;
     /**
      * The string of this reader. Should not be changed.
      */
-    readonly string: string;
+    public readonly string: string;
     /**
-     * A StringReader. Allows for easy reading of a literal one thing in a (single line) string follows another.    
-     * @param input The input. If given a StringReader, will copy the StringReader, else creates a new instance from the given string.     
+     * A StringReader. Allows for easy reading of a literal one thing in a (single line) string follows another.
      */
     constructor(input: string | StringReader) {
         if (input instanceof StringReader) {
             this.string = input.string;
             this.cursor = input.cursor;
-        }
-        else {
+        } else {
             this.cursor = 0;
-            this.string = <string>input;
+            this.string = input as string;
         }
     }
     /**
      * The number of remaining characters until the end of the string.
      */
-    getRemainingLength(): number {
+    public getRemainingLength(): number {
         return this.string.length - this.cursor;
     }
     /**
      * Get the text in the string which has been passed/Already read
      */
-    getRead(): string {
+    public getRead(): string {
         return this.string.substring(0, this.cursor);
     }
     /**
      * Get the text from the reader which hasn't been read yet.
      */
-    getRemaining(): string {
+    public getRemaining(): string {
         return this.string.substring(this.cursor);
     }
     /**
      * Is it safe to read?
      * @param length The number of characters. Can be omitted
      */
-    canRead(length: number = 1) {
+    public canRead(length: number = 1) {
         return this.cursor + length <= this.string.length;
     }
     /**
      * Look at a character without moving the cursor.
      * @param offset Where to look relative to the cursor. Can be omitted
      */
-    peek(offset: number = 0): string {
+    public peek(offset: number = 0): string {
         return this.string.charAt(this.cursor + offset);
     }
     /**
      * Look at the character at the cursor, which is returned, then move the cursor
      */
-    read(): string {
+    public read(): string {
         return this.string.charAt(this.cursor);
     }
     /**
      * Move the cursor one space
      */
-    skip() {
+    public skip() {
         this.cursor++;
-    }
-    /**
-     * Is the given number a valid number character. 
-     */
-    private static isAllowedNumber(c: string): boolean {
-        return /^[0-9\.-]$/.test(c);
     }
     /**
      * Go past any whitespace from the cursor's character
@@ -86,53 +164,44 @@ export class StringReader {
     /**
      * Read an integer from the string
      */
-    readInt(): number {
-        let start: number = this.cursor;
+    public readInt(): number {
+        const start: number = this.cursor;
         while (this.canRead() && StringReader.isAllowedNumber(this.peek())) {
             this.skip();
         }
-        let ReadToTest: string = this.string.substring(start, this.cursor);
-        if (ReadToTest.length == 0) {
-            throw new StringReaderExceptions.expectedInt(start);
+        const ReadToTest: string = this.string.substring(start, this.cursor);
+        if (ReadToTest.length === 0) {
+            throw new StringReaderExceptions.ExpectedInt(start);
         }
         try {
-            var read: number = parseInt(ReadToTest);
+            return parseInt(ReadToTest, 10);
         } catch (error) {
-            throw new StringReaderExceptions.invalidInt(start, this.cursor, ReadToTest);
+            throw new StringReaderExceptions.InvalidInt(start, this.cursor, ReadToTest);
         }
-        return read;
     }
     /**
      * Read float from the string
      */
-    readDouble(): number {
-        let start: number = this.cursor;
+    public readDouble(): number {
+        const start: number = this.cursor;
         while (this.canRead() && StringReader.isAllowedNumber(this.peek())) {
             this.skip();
         }
-        let ReadToTest: string = this.string.substring(start, this.cursor);
-        if (ReadToTest.length == 0) {
-            throw new StringReaderExceptions.expectedInt(start);
+        const ReadToTest: string = this.string.substring(start, this.cursor);
+        if (ReadToTest.length === 0) {
+            throw new StringReaderExceptions.ExpectedInt(start);
         }
         try {
-            var read: number = parseFloat(ReadToTest);
+            return parseFloat(ReadToTest);
         } catch (error) {
-            throw new StringReaderExceptions.invalidDouble(start, this.cursor, ReadToTest);
+            throw new StringReaderExceptions.InvalidDouble(start, this.cursor, ReadToTest);
         }
-        return read;
-    }
-    /**
-     * Is the given character allowed in an unquoted string
-     * @param c The character to test
-     */
-    private static isAllowedInUnquotedString(c: string) {
-        /^(?:[0-9]|[A-Z]|[a-z]|_|-|\.|\+)$/.test(c);
     }
     /**
      * Read a string from the string, which is not surrounded by quotes.
      */
-    readUnquotedString(): string {
-        let start: number = this.cursor;
+    public readUnquotedString(): string {
+        const start: number = this.cursor;
         while (this.canRead && StringReader.isAllowedInUnquotedString(this.peek())) {
             this.skip();
         }
@@ -141,41 +210,41 @@ export class StringReader {
     /**
      * Read from the string, returning a string, which, in the original had been surrounded by quotes
      */
-    readQuotedString(): string {
-        let start = this.cursor
+    public readQuotedString(): string {
+        const start = this.cursor;
         if (!this.canRead()) {
             return "";
-        } else if (this.peek() != StringReader.SYNTAX_QUOTE) {
-            throw new StringReaderExceptions.expectedStartOfQuote(this.cursor);
+        } else if (this.peek() !== StringReader.SYNTAX_QUOTE) {
+            throw new StringReaderExceptions.ExpectedStartOfQuote(this.cursor);
         }
         this.skip();
         let result: string = "";
         let escaped: boolean = false;
         while (this.canRead()) {
-            let c: string = this.read();
+            const c: string = this.read();
             if (escaped) {
-                if (c == StringReader.SYNTAX_QUOTE || c == StringReader.SYNTAX_ESCAPE) {
+                if (c === StringReader.SYNTAX_QUOTE || c === StringReader.SYNTAX_ESCAPE) {
                     result += c;
                     escaped = false;
                 } else {
                     this.cursor = this.cursor - 1;
-                    throw new StringReaderExceptions.invalidEscape(this.cursor, c);
+                    throw new StringReaderExceptions.InvalidEscape(this.cursor, c);
                 }
-            } else if (c == StringReader.SYNTAX_ESCAPE) {
+            } else if (c === StringReader.SYNTAX_ESCAPE) {
                 escaped = true;
-            } else if (c == StringReader.SYNTAX_QUOTE) {
+            } else if (c === StringReader.SYNTAX_QUOTE) {
                 return result.toString();
             } else {
                 result += c;
             }
         }
-        throw new StringReaderExceptions.expectedEndOfQuote(start);
+        throw new StringReaderExceptions.ExpectedEndOfQuote(start);
     }
     /**
      * Read a string from the string. If it surrounded by quotes, the quotes are ignored
      */
-    readString(): string {
-        if (this.canRead() && this.peek() == StringReader.SYNTAX_QUOTE) {
+    public readString(): string {
+        if (this.canRead() && this.peek() === StringReader.SYNTAX_QUOTE) {
             return this.readString();
         } else {
             return this.readUnquotedString();
@@ -184,11 +253,11 @@ export class StringReader {
     /**
      * Read a boolean value from the string
      */
-    readBoolean(): boolean {
-        let start: number = this.cursor;
-        let value: string = this.readString();
-        if (value.length == 0) {
-            throw new StringReaderExceptions.expectedBool(this.cursor);
+    public readBoolean(): boolean {
+        const start: number = this.cursor;
+        const value: string = this.readString();
+        if (value.length === 0) {
+            throw new StringReaderExceptions.ExpectedBool(this.cursor);
         }
         switch (value) {
             case "true":
@@ -196,16 +265,16 @@ export class StringReader {
             case "false":
                 return false;
             default:
-                throw new StringReaderExceptions.invalidBool(start, this.cursor, value);
+                throw new StringReaderExceptions.InvalidBool(start, this.cursor, value);
         }
     }
     /**
      * Check if a character follows.
      * @param c The character which should come next
      */
-    expect(c: string) {
-        if (!this.canRead() || this.peek() != c) {
-            throw new StringReaderExceptions.expectedSymbol(this.cursor, this.cursor, this.peek(), c)
+    public expect(c: string) {
+        if (!this.canRead() || this.peek() !== c) {
+            throw new StringReaderExceptions.ExpectedSymbol(this.cursor, this.cursor, this.peek(), c);
         }
         this.skip();
     }

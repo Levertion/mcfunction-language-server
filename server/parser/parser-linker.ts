@@ -1,13 +1,12 @@
 import { Argument } from "./arguments";
-import { StringArgument } from "./brigadier/string";
-import { IntegerArgument } from "./brigadier/integer";
-import { FloatArgument } from "./brigadier/float";
 import { BooleanArgument } from "./brigadier/boolean";
+import { FloatArgument } from "./brigadier/float";
+import { IntegerArgument } from "./brigadier/integer";
+import { StringArgument } from "./brigadier/string";
 
 /**
  * A dictionary of parser keys as defined in tree.json into actual parsers
  */
-
 export function getParser(parser: string): Argument {
     switch (parser) {
         case "brigadier:string":
@@ -15,10 +14,10 @@ export function getParser(parser: string): Argument {
         case "brigadier:integer":
             return IntegerArgument;
         case "brigadier:float":
-            return FloatArgument
+            return FloatArgument;
         case "brigadier:bool":
-            return BooleanArgument
+            return BooleanArgument;
         default:
-            throw `${parser} is either an invalid parser or hasn't been implemented yet.`;
+            throw new Error(`${parser} is either an invalid parser or hasn't been implemented yet.`);
     }
 }

@@ -4,43 +4,43 @@
  * Origin under the MIT license: Copyright (C) Microsoft Corporation. All rights reserved.
  * This version under the MIT license as in the project root
  *-------------------------------------------------------*/
-import * as path from 'path';
+import * as path from "path";
 import {
-    workspace as Workspace, window as Window, ExtensionContext, TextDocument, OutputChannel, WorkspaceFolder, Uri
-} from 'vscode';
+    ExtensionContext, OutputChannel, TextDocument, Uri, window as Window, workspace as Workspace, WorkspaceFolder,
+} from "vscode";
 import {
-    LanguageClient, LanguageClientOptions, TransportKind
-} from 'vscode-languageclient';
+    LanguageClient, LanguageClientOptions, TransportKind,
+} from "vscode-languageclient";
 
 let defaultClient: LanguageClient;
-let clients: Map<string, LanguageClient> = new Map();
+const clients: Map<string, LanguageClient> = new Map();
 
-let _sortedWorkspaceFolders: string[];
+let SortedWorkspaceFolders: string[];
 function sortedWorkspaceFolders(): string[] {
-    if (_sortedWorkspaceFolders === void 0) {
-        _sortedWorkspaceFolders = Workspace.workspaceFolders.map(folder => {
+    if (SortedWorkspaceFolders === void 0) {
+        SortedWorkspaceFolders = Workspace.workspaceFolders.map((folder) => {
             let result = folder.uri.toString();
             // Ensure ends with consistent character
-            if (result.charAt(result.length - 1) !== '/') {
-                result = result + '/';
+            if (result.charAt(result.length - 1) !== "/") {
+                result = result + "/";
             }
             return result;
         }).sort(
             (a, b) => {
-                return a.length - b.length; //Sort in length order with longest first(?)
-            }
-            );
+                return a.length - b.length; // Sort in length order with longest first(?)
+            },
+        );
     }
-    return _sortedWorkspaceFolders;
+    return SortedWorkspaceFolders;
 }
-Workspace.onDidChangeWorkspaceFolders(() => _sortedWorkspaceFolders = undefined);
+Workspace.onDidChangeWorkspaceFolders(() => SortedWorkspaceFolders = undefined);
 
 function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
-    let sorted = sortedWorkspaceFolders();
-    for (let element of sorted) {
+    const sorted = sortedWorkspaceFolders();
+    for (const element of sorted) {
         let uri = folder.uri.toString();
-        if (uri.charAt(uri.length - 1) !== '/') {
-            uri = uri + '/';
+        if (uri.charAt(uri.length - 1) !== "/") {
+            uri = uri + "/";
         }
         if (uri.startsWith(element)) {
             return Workspace.getWorkspaceFolder(Uri.parse(element));
@@ -51,31 +51,31 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 
 export function activate(context: ExtensionContext) {
 
-    let module = context.asAbsolutePath(path.join('out', 'server', 'index.js'));
-    let outputChannel: OutputChannel = Window.createOutputChannel('Minecraft Functions');
+    const module = context.asAbsolutePath(path.join("out", "server", "index.js"));
+    const outputChannel: OutputChannel = Window.createOutputChannel("Minecraft Functions");
 
     function didOpenTextDocument(document: TextDocument): void {
         // We are only interested in mcfunction files
-        if (document.languageId !== 'mcfunction' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
+        if (document.languageId !== "mcfunction" || (document.uri.scheme !== "file" && document.uri.scheme !== "untitled")) {
             return;
         }
 
-        let uri = document.uri;
+        const uri = document.uri;
         // Untitled files go to a default client.
-        if (uri.scheme === 'untitled' && !defaultClient) {
-            let debugOptions = { execArgv: ["--nolazy", "--inspect=6010"] };
-            let serverOptions = {
+        if (uri.scheme === "untitled" && !defaultClient) {
+            const debugOptions = { execArgv: ["--nolazy", "--inspect=6010"] };
+            const serverOptions = {
                 run: { module, transport: TransportKind.ipc },
-                debug: { module, transport: TransportKind.ipc, options: debugOptions }
+                debug: { module, transport: TransportKind.ipc, options: debugOptions },
             };
-            let clientOptions: LanguageClientOptions = {
+            const clientOptions: LanguageClientOptions = {
                 documentSelector: [
-                    { scheme: 'untitled', language: 'plaintext' }
+                    { scheme: "untitled", language: "plaintext" },
                 ],
-                diagnosticCollectionName: 'mcfunction-lsp',
-                outputChannel: outputChannel
-            }
-            defaultClient = new LanguageClient('mcfunction-lsp', 'Minecraft Function Language Server', serverOptions, clientOptions);
+                diagnosticCollectionName: "mcfunction-lsp",
+                outputChannel,
+            };
+            defaultClient = new LanguageClient("mcfunction-lsp", "Minecraft Function Language Server", serverOptions, clientOptions);
             defaultClient.start();
             return;
         }
@@ -89,20 +89,20 @@ export function activate(context: ExtensionContext) {
         folder = getOuterMostWorkspaceFolder(folder);
 
         if (!clients.has(folder.uri.toString())) {
-            let debugOptions = { execArgv: ["--nolazy", `--inspect=${6011 + clients.size}`] };
-            let serverOptions = {
+            const debugOptions = { execArgv: ["--nolazy", `--inspect=${6011 + clients.size}`] };
+            const serverOptions = {
                 run: { module, transport: TransportKind.ipc },
-                debug: { module, transport: TransportKind.ipc, options: debugOptions }
+                debug: { module, transport: TransportKind.ipc, options: debugOptions },
             };
-            let clientOptions: LanguageClientOptions = {
+            const clientOptions: LanguageClientOptions = {
                 documentSelector: [
-                    { scheme: 'file', language: 'mcfunction', pattern: `${folder.uri.fsPath}/**/*` }
+                    { scheme: "file", language: "mcfunction", pattern: `${folder.uri.fsPath}/**/*` },
                 ],
-                diagnosticCollectionName: 'mcfunction-lsp',
+                diagnosticCollectionName: "mcfunction-lsp",
                 workspaceFolder: folder,
-                outputChannel: outputChannel
-            }
-            let client = new LanguageClient('mcfunction-lsp', 'Minecraft Function Language Server', serverOptions, clientOptions);
+                outputChannel,
+            };
+            const client = new LanguageClient("mcfunction-lsp", "Minecraft Function Language Server", serverOptions, clientOptions);
             client.start();
             clients.set(folder.uri.toString(), client);
         }
@@ -111,8 +111,8 @@ export function activate(context: ExtensionContext) {
     Workspace.onDidOpenTextDocument(didOpenTextDocument);
     Workspace.textDocuments.forEach(didOpenTextDocument);
     Workspace.onDidChangeWorkspaceFolders((event) => {
-        for (let folder of event.removed) {
-            let client = clients.get(folder.uri.toString());
+        for (const folder of event.removed) {
+            const client = clients.get(folder.uri.toString());
             if (client) {
                 clients.delete(folder.uri.toString());
                 client.stop();
@@ -122,11 +122,11 @@ export function activate(context: ExtensionContext) {
 }
 
 export function deactivate(): Thenable<void> {
-    let promises: Thenable<void>[] = [];
+    const promises: Array<Thenable<void>> = [];
     if (defaultClient) {
         promises.push(defaultClient.stop());
     }
-    for (let client of clients.values()) {
+    for (const client of clients.values()) {
         promises.push(client.stop());
     }
     return Promise.all(promises).then(() => undefined);
