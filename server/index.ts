@@ -12,7 +12,7 @@ import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
 import {
     createConnection, TextDocuments,
 } from "vscode-languageserver";
-import { DocumentInformation, getChangedLines, NodeRange } from "./document-information";
+import { DocumentInformation, getChangedLines, NodeRange, DocLine } from "./document-information";
 
 // Creates the LSP connection
 const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
@@ -24,8 +24,6 @@ const documentsInformation: { [uri: string]: DocumentInformation } = {};
 
 // The workspace folder this server is operating on
 let workspaceFolder: string;
-
-documents.listen(connection);
 
 connection.onInitialize((params) => {
     workspaceFolder = params.rootUri;
@@ -40,7 +38,6 @@ connection.onInitialize((params) => {
     };
 });
 
-connection.listen();
 
 connection.onDidChangeTextDocument((event) => {
     let changedLines: number[] = [];
@@ -50,11 +47,17 @@ connection.onDidChangeTextDocument((event) => {
         changedLines = result.tracker;
         const linesChange = result.linesChange;
         // Remove the changed lines, and then refill the new needed ones with empty trees. Probably needs testing :)
-        documentInfo.lines.splice(linesChange.newLine, linesChange.oldLine, ...Array<IntervalTree<NodeRange>>(linesChange.oldLine - linesChange.newLine).fill(new IntervalTree<NodeRange>()));
+        documentInfo.lines.splice(linesChange.newLine, linesChange.oldLine, ...Array<DocLine>(linesChange.oldLine - linesChange.newLine).fill({ Nodes: new IntervalTree<NodeRange>() }));
     });
     documentsInformation[event.textDocument.uri] = documentInfo;
+    changedLines.forEach((line) => {
+        line.valueOf();
+    });
 });
 
 documents.onDidOpen((event) => {
     connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`);
 });
+
+documents.listen(connection);
+connection.listen();
