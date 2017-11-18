@@ -1,6 +1,5 @@
 import { Interval, IntervalTree } from "node-interval-tree";
-import { TextDocumentContentChangeEvent } from "vscode-languageserver/lib/main";
-import { McError } from "./parser/exceptions";
+import { Diagnostic, TextDocumentContentChangeEvent } from "vscode-languageserver/lib/main";
 /**
  * A description of an area of a node.
  */
@@ -11,12 +10,13 @@ export interface NodeRange extends Interval {
     key: string;
     /**
      * The path to the node in the command tree.
+     * TODO: Actually implement this.
      */
-    path: string[];
+    path?: string[];
 }
 
 export interface DocLine {
-    issue?: McError;
+    issue?: Diagnostic;
     Nodes: IntervalTree<NodeRange>;
 
 }
