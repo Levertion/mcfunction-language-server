@@ -8,6 +8,10 @@ export interface NodeRange extends Interval {
      * The name of the node in the tree.
      */
     key: string;
+    /**
+     * The path to the node in the command tree.
+     */
+    path: string[];
 }
 
 export interface DocumentInformation {
