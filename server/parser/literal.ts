@@ -1,4 +1,4 @@
-import { Argument, Properties } from "./arguments";
+import { Arg, Properties } from "./arguments";
 import { McError } from "./exceptions";
 import { StringReader } from "./string-reader";
 
@@ -12,8 +12,8 @@ export namespace LiteralExceptions {
     }
 }
 
-export class LiteralArgument extends Argument {
-    public static parse(reader: StringReader, properties: Properties) {
+export const LiteralArgument: Arg = {
+    parse: (reader: StringReader, properties: Properties) => {
         const start = reader.cursor;
         for (let index = 0; index < properties.key.length; index++) {
             if (reader.canRead() && properties.key.charAt(index) === reader.peek()) {
@@ -23,12 +23,12 @@ export class LiteralArgument extends Argument {
                 throw new LiteralExceptions.IncorrectLiteral(start, properties.key, reader.string.substring(start, reader.cursor));
             }
         }
-    }
-    public static listSuggestions(start: string, properties: Properties) {
+    },
+    listSuggestions: (start: string, properties: Properties) => {
         if (properties.key.startsWith(start)) {
             return [properties.key];
         } else {
             return [];
         }
-    }
-}
+    },
+};

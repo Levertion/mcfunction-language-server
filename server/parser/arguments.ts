@@ -1,4 +1,3 @@
-import { Interval } from "node-interval-tree";
 import { StringReader } from "./string-reader";
 
 export interface Properties {

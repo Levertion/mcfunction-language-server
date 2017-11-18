@@ -1,8 +1,8 @@
-import { Argument, Properties, Arg } from "../arguments";
+import { Arg, Properties } from "../arguments";
 import { StringReader } from "../string-reader";
 
 enum StringType {
-    "word", "phrase", "greedy"
+    "word", "phrase", "greedy",
 }
 // See https://github.com/Microsoft/TypeScript/issues/14106#issuecomment-280253269
 type StringTypeKey = keyof typeof StringType;
