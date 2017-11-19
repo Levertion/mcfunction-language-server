@@ -12,17 +12,15 @@ const JAVAMAX = 2147483647;
 
 namespace FloatExceptions {
     export class FloatTooLow extends McError {
-        public description = "Float must not be less than %s, found %s";
         public type = "argument.float.low";
         constructor(start: number, end: number, expected: number, got: number) {
-            super(start, end, expected.toString(), got.toString());
+            super("Float must not be less than %s, found %s", start, end, expected.toString(), got.toString());
         }
     }
     export class FloatTooHigh extends McError {
-        public description = "Float must not be more than %s, found %s";
         public type = "argument.float.big";
         constructor(start: number, end: number, expected: number, got: number) {
-            super(start, end, expected.toString(), got.toString());
+            super("Float must not be more than %s, found %s", start, end, expected.toString(), got.toString());
         }
     }
 }

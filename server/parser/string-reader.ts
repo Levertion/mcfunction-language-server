@@ -3,73 +3,63 @@ import { McError } from "./exceptions";
 namespace StringReaderExceptions {
     export class ExpectedInt extends McError {
         public type = "parsing.int.expected";
-        public description = "An Integer was expected but null was found instead";
         constructor(start: number) {
-            super(start, start);
+            super("An Integer was expected but null was found instead", start, start + 1);
         }
     }
     export class InvalidInt extends McError {
         public type = "parsing.int.invalid";
-        public description = "Invalid integer '%s'";
         constructor(start: number, end: number, recieved: string) {
-            super(start, end, recieved);
+            super("Invalid integer '%s'", start, end, recieved);
         }
     }
 
     export class ExpectedDouble extends McError {
         public type = "parsing.double.expected";
-        public description = "A double was expected but null was found instead";
         constructor(start: number) {
-            super(start, start);
+            super("A double was expected but null was found instead", start, start + 1);
         }
     }
     export class InvalidDouble extends McError {
         public type = "parsing.double.invalid";
-        public description = "Invalid double '%s'";
         constructor(start: number, end: number, recieved: string) {
-            super(start, end, recieved);
+            super("Invalid double '%s'", start, end, recieved);
         }
     }
     export class ExpectedStartOfQuote extends McError {
         public type = "parsing.quote.expected.start";
-        public description = "Expected quote to start a string";
         constructor(start: number) {
-            super(start);
+            super("Expected quote to start a string", start, start + 1);
         }
     }
     export class ExpectedEndOfQuote extends McError {
         public type = "parsing.quote.expected.end";
-        public description = "Unclosed quoted string";
-        constructor(start: number) {
-            super(start);
+        constructor(start: number, end: number) {
+            super("Unclosed quoted string", start, end);
         }
     }
     export class InvalidEscape extends McError {
         public type = "parsing.quote.escape";
-        public description = "Invalid escape sequence '\\%s' in quoted string";
-        constructor(start: number, character: string) {
-            super(start, null, character);
+        constructor(start: number, end: number, character: string) {
+            super("Invalid escape sequence '\\%s' in quoted string", start, end, character);
         }
     }
     export class ExpectedBool extends McError {
         public type = "parsing.bool.expected";
-        public description = "A boolean value was expected but null was found instead";
         constructor(start: number) {
-            super(start);
+            super("A boolean value was expected but null was found instead", start);
         }
     }
     export class InvalidBool extends McError {
         public type = "parsing.bool.invalid";
-        public description = "Invalid boolean '%s'";
         constructor(start: number, end: number, bool: string) {
-            super(start, end, bool);
+            super("Invalid boolean '%s'", start, end, bool);
         }
     }
     export class ExpectedSymbol extends McError {
         public type = "parsing.expected";
-        public description = "Expected %s, got %s";
         constructor(start: number, end: number, expected: string, recieved: string) {
-            super(start, end, expected, recieved);
+            super("Expected %s, got %s", start, end, expected, recieved);
         }
     }
 }
@@ -228,7 +218,7 @@ export class StringReader {
                     escaped = false;
                 } else {
                     this.cursor = this.cursor - 1;
-                    throw new StringReaderExceptions.InvalidEscape(this.cursor, c);
+                    throw new StringReaderExceptions.InvalidEscape(this.cursor, this.string.length, c);
                 }
             } else if (c === StringReader.SYNTAX_ESCAPE) {
                 escaped = true;
@@ -238,7 +228,7 @@ export class StringReader {
                 result += c;
             }
         }
-        throw new StringReaderExceptions.ExpectedEndOfQuote(start);
+        throw new StringReaderExceptions.ExpectedEndOfQuote(start, this.string.length);
     }
     /**
      * Read a string from the string. If it surrounded by quotes, the quotes are ignored

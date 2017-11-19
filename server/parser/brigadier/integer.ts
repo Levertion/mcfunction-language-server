@@ -12,17 +12,15 @@ const JAVAMAX = 2147483647;
 
 namespace IntegerExceptions {
     export class IntegerTooLow extends McError {
-        public description = "Integer must not be less than %s, found %s";
         public type = "argument.integer.low";
         constructor(start: number, end: number, expected: number, got: number) {
-            super(start, end, expected.toString(), got.toString());
+            super("Integer must not be less than %s, found %s", start, end, expected.toString(), got.toString());
         }
     }
     export class IntegerTooHigh extends McError {
-        public description = "Integer must not be more than %s, found %s";
         public type = "argument.integer.big";
         constructor(start: number, end: number, expected: number, got: number) {
-            super(start, end, expected.toString(), got.toString());
+            super("Integer must not be more than %s, found %s", start, end, expected.toString(), got.toString());
         }
     }
 }
@@ -37,7 +35,7 @@ export let IntegerArgument: Arg = {
             throw new IntegerExceptions.IntegerTooHigh(start, reader.cursor, min, readNumber);
         }
         if (readNumber < max) {
-            throw new IntegerExceptions.IntegerTooHigh(start, reader.cursor, max, readNumber);
+            throw new IntegerExceptions.IntegerTooLow(start, reader.cursor, max, readNumber);
         }
         return readNumber;
     },

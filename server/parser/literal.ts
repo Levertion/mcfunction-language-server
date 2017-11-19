@@ -4,10 +4,9 @@ import { StringReader } from "./string-reader";
 
 export namespace LiteralExceptions {
     export class IncorrectLiteral extends McError {
-        public description = "Expected literal %s, got %s";
         public type = "argument.literal.incorrect";
-        constructor(start: number, expected: string, got: string) {
-            super(start, null, expected, got);
+        constructor(start: number, end: number, expected: string, got: string) {
+            super("Expected literal %s, got %s", start, end, expected, got);
         }
     }
 }
@@ -20,7 +19,7 @@ export const LiteralArgument: Arg = {
                 reader.skip();
             } else {
                 reader.cursor = start;
-                throw new LiteralExceptions.IncorrectLiteral(start, properties.key, reader.string.substring(start, reader.cursor));
+                throw new LiteralExceptions.IncorrectLiteral(start, reader.string.length, properties.key, reader.string.substring(start, reader.cursor));
             }
         }
     },

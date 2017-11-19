@@ -9,9 +9,9 @@ export interface McError {
 }
 
 export abstract class McError implements McError {
-    constructor(start: number, end?: number, ...formatting: string[]) {
-        this.computed = format(this.description, formatting);
+    constructor(description: string, start: number, end?: number, ...formatting: string[]) {
+        this.computed = format(description, ...formatting);
         this.start = start;
-        this.end = end + 1 || -1;
+        this.end = end;
     }
 }

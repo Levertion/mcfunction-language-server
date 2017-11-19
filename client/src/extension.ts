@@ -6,10 +6,10 @@
  *-------------------------------------------------------*/
 import * as path from "path";
 import {
-    ExtensionContext, OutputChannel, TextDocument, Uri, window as Window, workspace as Workspace, WorkspaceFolder,
+    ExtensionContext, OutputChannel, TextDocument, Uri, window, workspace, WorkspaceFolder,
 } from "vscode";
 import {
-    LanguageClient, LanguageClientOptions, TransportKind,
+    LanguageClient, LanguageClientOptions, TransportKind, VersionedTextDocumentIdentifier,
 } from "vscode-languageclient";
 
 let defaultClient: LanguageClient;
@@ -18,7 +18,7 @@ const clients: Map<string, LanguageClient> = new Map();
 let SortedWorkspaceFolders: string[];
 function sortedWorkspaceFolders(): string[] {
     if (SortedWorkspaceFolders === void 0) {
-        SortedWorkspaceFolders = Workspace.workspaceFolders.map((folder) => {
+        SortedWorkspaceFolders = workspace.workspaceFolders.map((folder) => {
             let result = folder.uri.toString();
             // Ensure ends with consistent character
             if (result.charAt(result.length - 1) !== "/") {
@@ -33,7 +33,7 @@ function sortedWorkspaceFolders(): string[] {
     }
     return SortedWorkspaceFolders;
 }
-Workspace.onDidChangeWorkspaceFolders(() => SortedWorkspaceFolders = undefined);
+workspace.onDidChangeWorkspaceFolders(() => SortedWorkspaceFolders = undefined);
 
 function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
     const sorted = sortedWorkspaceFolders();
@@ -43,7 +43,7 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
             uri = uri + "/";
         }
         if (uri.startsWith(element)) {
-            return Workspace.getWorkspaceFolder(Uri.parse(element));
+            return workspace.getWorkspaceFolder(Uri.parse(element));
         }
     }
     return folder;
@@ -52,7 +52,7 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 export function activate(context: ExtensionContext) {
 
     const module = context.asAbsolutePath(path.join("out", "server", "index.js"));
-    const outputChannel: OutputChannel = Window.createOutputChannel("Minecraft Functions");
+    const outputChannel: OutputChannel = window.createOutputChannel("Minecraft Functions");
 
     function didOpenTextDocument(document: TextDocument): void {
         // We are only interested in mcfunction files
@@ -79,7 +79,7 @@ export function activate(context: ExtensionContext) {
             defaultClient.start();
             return;
         }
-        let folder = Workspace.getWorkspaceFolder(uri);
+        let folder = workspace.getWorkspaceFolder(uri);
         // Files outside a folder can't be handled. This might depend on the language.
         // Single file languages like JSON might handle files outside the workspace folders.
         if (!folder) {
@@ -105,12 +105,25 @@ export function activate(context: ExtensionContext) {
             const client = new LanguageClient("mcfunction-lsp", "Minecraft Function Language Server", serverOptions, clientOptions);
             client.start();
             clients.set(folder.uri.toString(), client);
+            client.onReady().then(() => {
+                client.onRequest("getDocumentLines", (textDocument: VersionedTextDocumentIdentifier, changedLines: number[]) => {
+                    for (const doc of workspace.textDocuments) {
+                        if (textDocument.uri === doc.uri.toString()) {
+                            if (doc.version === document.version) {
+                                return { lines: changedLines.map<string>((lineNo) => doc.lineAt(lineNo).text), numbers: changedLines };
+                            } else {
+                                return null;
+                            }
+                        }
+                    }
+                });
+            });
         }
     }
 
-    Workspace.onDidOpenTextDocument(didOpenTextDocument);
-    Workspace.textDocuments.forEach(didOpenTextDocument);
-    Workspace.onDidChangeWorkspaceFolders((event) => {
+    workspace.onDidOpenTextDocument(didOpenTextDocument);
+    workspace.textDocuments.forEach(didOpenTextDocument);
+    workspace.onDidChangeWorkspaceFolders((event) => {
         for (const folder of event.removed) {
             const client = clients.get(folder.uri.toString());
             if (client) {

@@ -42,6 +42,6 @@ export function getChangedLines(change: TextDocumentContentChangeEvent, linesToT
     const lines = change.text.split(/\r?\n/g);
     h.linesChange.newLine += lines.length - 1;
     // See https://stackoverflow.com/a/29559488
-    h.tracker = linesToTrack.concat(Array.from(new Array(lines.length - 1), (_, i) => i + h.linesChange.oldLine));
+    h.tracker = linesToTrack.concat(Array.from(new Array(lines.length), (_, i) => i + change.range.start.line));
     return h;
 }

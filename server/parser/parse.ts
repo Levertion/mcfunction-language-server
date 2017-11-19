@@ -46,7 +46,7 @@ function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, 
     const start = reader.cursor;
     if (node.type === "literal") {
         try {
-            LiteralArgument.parse(reader, node.properties);
+            LiteralArgument.parse(reader, properties);
         } catch (error) {
             if (!(error instanceof McError)) {
                 throw error;
@@ -59,7 +59,6 @@ function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, 
         } catch (error) {
             if (error instanceof McError) {
                 diagnostic = {
-                    // tslint:disable-next-line:object-literal-sort-keys
                     code: error.type, message: error.computed, severity: DiagnosticSeverity.Error, source: "mcfunction", range: {
                         start: {
                             line,
@@ -78,7 +77,9 @@ function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, 
     }
     if (!diagnostic) {
         nodes.push({ low: start, high: reader.cursor, key });
-        for (const childKey of Object.keys(node.children)) {
+        reader.skip();
+        // tslint:disable-next-line:forin
+        for (const childKey in node.children) {
             const parseResult = parseAgainstNode(node.children[childKey], reader, childKey, line);
             if (parseResult) {
                 nodes.concat(parseResult.nodes);

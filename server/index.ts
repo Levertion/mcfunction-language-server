@@ -10,7 +10,7 @@ import { IntervalTree } from "node-interval-tree";
 import { IPCMessageWriter } from "vscode-jsonrpc";
 import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
 import {
-    createConnection, Diagnostic, TextDocuments,
+    createConnection, Diagnostic, TextDocumentSyncKind,
 } from "vscode-languageserver";
 import { DocLine, DocumentInformation, getChangedLines, NodeRange } from "./document-information";
 import { CommandNode, parseCommand } from "./parser/parse";
@@ -19,16 +19,34 @@ import { CommandNode, parseCommand } from "./parser/parse";
 const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 
 // Create a manager for open text documents
-const documents = new TextDocuments();
-
 const documentsInformation: { [uri: string]: DocumentInformation } = {};
-
-documents.listen(connection);
+interface GetLineResult {
+    lines: string[];
+    numbers: number[];
+}
 connection.listen();
 // The workspace folder this server is operating on
 let workspaceFolder: string;
 
-let commandTree: CommandNode;
+const commandTree: CommandNode = {
+    type: "root", children: {
+        test1: { type: "literal" },
+        test2: {
+            type: "literal",
+            children: {
+                int: {
+                    type: "argument",
+                    parser: "brigadier:integer",
+                    properties: {
+                        // @ts-ignore due to the way properties are implemented, this is invalid for properties but valid for an actual tree.
+                        min: -10,
+                        max: 100,
+                    },
+                },
+            },
+        },
+    },
+};
 connection.onInitialize((params) => {
     workspaceFolder = params.rootUri;
     connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Started and initialize received`);
@@ -36,7 +54,7 @@ connection.onInitialize((params) => {
         capabilities: {
             textDocumentSync: {
                 openClose: true,
-                change: documents.syncKind,
+                change: TextDocumentSyncKind.Incremental,
             },
         },
     };
@@ -45,62 +63,54 @@ connection.onInitialize((params) => {
 connection.onDidChangeConfiguration(() => {
     connection.console.log("Config Change successful");
     // Temp
-    commandTree = {
-        type: "root", children: {
-            test1: { type: "literal" },
-            test2: {
-                type: "literal",
-                children: {
-                    int: {
-                        type: "argument",
-                        parser: "brigadier:integer",
-                        properties: {
-                            // @ts-ignore
-                            min: -10,
-                            max: 100,
-                        },
-                    },
-                },
-            },
-        },
-    };
-    connection.console.log(JSON.stringify(commandTree));
 });
 
 connection.onDidChangeTextDocument((event) => {
-    connection.console.log(JSON.stringify(event));
+    connection.sendDiagnostics({ uri: event.textDocument.uri, diagnostics: [] }); // Clear existing diagnostics
+    const uri: string = event.textDocument.uri;
     let changedLines: number[] = [];
-    const documentInfo = documentsInformation[event.textDocument.uri];
     event.contentChanges.forEach((change) => {
-        connection.console.log(JSON.stringify(change));
         const result = getChangedLines(change, changedLines);
         changedLines = result.tracker;
-        const linesChange = result.linesChange;
         // Remove the changed lines, and then refill the new needed ones with empty trees. Probably needs testing :)
-        documentInfo.lines.splice(linesChange.newLine, linesChange.oldLine, ...Array<DocLine>(linesChange.oldLine - linesChange.newLine).fill({ Nodes: new IntervalTree<NodeRange>() }));
+        documentsInformation[uri].lines.splice(Math.min(...result.tracker), result.tracker.length, ...Array<DocLine>(result.tracker.length).fill({ Nodes: new IntervalTree<NodeRange>() }));
     });
-    const lines: string[] = documents.get(event.textDocument.uri).getText().split(/\n/g);
-    connection.console.log(JSON.stringify(changedLines));
-    changedLines.forEach((line) => {
-        connection.console.log(JSON.stringify(line));
-        const parseResult = parseCommand(lines[line], line, commandTree);
-        documentInfo.lines[line].issue = parseResult.diagnostic;
-        parseResult.nodes.forEach((node) => {
-            documentInfo.lines[line].Nodes.insert(node);
-        });
-    });
-    documentsInformation[event.textDocument.uri] = documentInfo;
-    connection.sendDiagnostics({
-        uri: event.textDocument.uri, diagnostics: documentInfo.lines.filter((line) => line.issue !== null).map<Diagnostic>((line) => {
-            const diagnostic = line.issue;
-            if (diagnostic.range.end.character === - 1) {
-                diagnostic.range.end.character = lines[diagnostic.range.end.line].length;
-            }
-            return diagnostic;
-        }),
-    });
+    connection.console.log(`New lines: ${JSON.stringify(changedLines)}`);
+    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => LinesGot(value as GetLineResult, uri), (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
 });
 
-documents.onDidOpen((event) => {
-    connection.console.log(`[Server(${process.pid}) ${workspaceFolder}] Document opened: ${event.document.uri}`);
+connection.onDidOpenTextDocument((params) => {
+    connection.console.log("Document Opened");
+    const lines = params.textDocument.text.split(/\r?\n/g);
+    documentsInformation[params.textDocument.uri] = { lines: new Array<DocLine>(lines.length).fill({ Nodes: new IntervalTree<NodeRange>() }) };
+    LinesGot({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i) }, params.textDocument.uri);
 });
+
+connection.onDidCloseTextDocument((params) => {
+    connection.console.log("Document Closed");
+    delete documentsInformation[params.textDocument.uri];
+});
+
+function LinesGot(value: GetLineResult, uri: string) {
+    if (value) { // Textdocument change event is sent even when a text document closes?
+        for (let i = 0; i < value.lines.length; i++) {
+            const line = value.lines[i];
+            const num = value.numbers[i];
+            const lineInfo = documentsInformation[uri].lines[num]; // Index out of bounds
+            const parseResult = parseCommand(line, num, commandTree);
+            lineInfo.issue = parseResult.diagnostic;
+            if (lineInfo.issue.range.end.character === -1) {
+                lineInfo.issue.range.end.character = line.length;
+            }
+            parseResult.nodes.forEach((node) => {
+                lineInfo.Nodes.insert(node);
+            });
+        }
+        connection.sendDiagnostics({
+            uri, diagnostics: documentsInformation[uri].lines.filter((line) => line.issue !== null).map<Diagnostic>((line) => {
+                const diagnostic = line.issue;
+                return diagnostic;
+            }),
+        });
+    }
+}
