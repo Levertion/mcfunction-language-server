@@ -179,7 +179,7 @@ export class StringReader {
         }
         const ReadToTest: string = this.string.substring(start, this.cursor);
         if (ReadToTest.length === 0) {
-            throw new StringReaderExceptions.ExpectedInt(start);
+            throw new StringReaderExceptions.ExpectedDouble(start);
         }
         try {
             return parseFloat(ReadToTest);
