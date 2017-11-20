@@ -25,23 +25,21 @@ export interface DocumentInformation {
     lines: DocLine[];
 }
 
-interface ChangedLines {
+
+interface ChangedLinesResult {
+    tracker: number[];
+    added: number;
     oldLine: number;
     newLine: number;
 }
 
-interface ChangedLinesResult {
-    tracker: number[];
-    linesChange: ChangedLines;
-}
-
 export function getChangedLines(change: TextDocumentContentChangeEvent, linesToTrack: number[]) {
-    const h: ChangedLinesResult = { linesChange: { oldLine: 0, newLine: 0 }, tracker: [] };
-    h.linesChange.oldLine = change.range.end.line;
-    h.linesChange.newLine = change.range.start.line;
+    const result: ChangedLinesResult = { oldLine: 0, newLine: 0, tracker: [], added: 0 };
+    result.oldLine = change.range.end.line;
+    result.newLine = change.range.start.line;
     const lines = change.text.split(/\r?\n/g);
-    h.linesChange.newLine += lines.length - 1;
     // See https://stackoverflow.com/a/29559488
-    h.tracker = linesToTrack.concat(Array.from(new Array(lines.length), (_, i) => i + change.range.start.line));
-    return h;
+    result.tracker = linesToTrack.concat(Array.from(new Array(lines.length), (_, i) => i + result.newLine));
+    result.added = lines.length;
+    return result;
 }

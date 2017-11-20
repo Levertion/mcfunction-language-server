@@ -73,7 +73,7 @@ connection.onDidChangeTextDocument((event) => {
         const result = getChangedLines(change, changedLines);
         changedLines = result.tracker;
         // Remove the changed lines, and then refill the new needed ones with empty trees. Probably needs testing :)
-        documentsInformation[uri].lines.splice(Math.min(...result.tracker), result.tracker.length, ...Array<DocLine>(result.tracker.length).fill({ Nodes: new IntervalTree<NodeRange>() }));
+        documentsInformation[uri].lines.splice(result.newLine, result.oldLine - result.newLine + 1, ...Array<DocLine>(result.added).fill({ Nodes: new IntervalTree<NodeRange>() }));
     });
     connection.console.log(`New lines: ${JSON.stringify(changedLines)}`);
     connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => LinesGot(value as GetLineResult, uri), (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
