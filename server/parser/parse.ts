@@ -89,7 +89,7 @@ function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, 
                 const parseResult = parseAgainstNode(node.children[childKey], reader, childKey, line);
                 nodes.concat(parseResult.nodes);
                 diagnostic = parseResult.diagnostic;
-                succeeded = succeeded ? true : parseResult.successful;
+                succeeded = succeeded || parseResult.successful;
                 reader.cursor = begin;
             }
             if (!succeeded && diagnostic !== null) {
