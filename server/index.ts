@@ -76,7 +76,7 @@ connection.onDidChangeTextDocument((event) => {
         documentsInformation[uri].lines.splice(result.newLine, result.oldLine - result.newLine + 1, ...Array<DocLine>(result.added).fill({ Nodes: new IntervalTree<NodeRange>() }));
     });
     connection.console.log(`New lines: ${JSON.stringify(changedLines)}`);
-    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => LinesGot(value as GetLineResult, uri), (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
+    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { LinesGot(value as GetLineResult, uri); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
 });
 
 connection.onDidOpenTextDocument((params) => {
@@ -92,25 +92,23 @@ connection.onDidCloseTextDocument((params) => {
 });
 
 function LinesGot(value: GetLineResult, uri: string) {
-    if (value) { // Textdocument change event is sent even when a text document closes?
-        for (let i = 0; i < value.lines.length; i++) {
-            const line = value.lines[i];
-            const num = value.numbers[i];
-            const lineInfo = documentsInformation[uri].lines[num]; // Index out of bounds
-            const parseResult = parseCommand(line, num, commandTree);
-            lineInfo.issue = parseResult.diagnostic;
-            if (lineInfo.issue.range.end.character === -1) {
-                lineInfo.issue.range.end.character = line.length;
-            }
-            parseResult.nodes.forEach((node) => {
-                lineInfo.Nodes.insert(node);
-            });
+    for (let i = 0; i < value.lines.length; i++) {
+        const line = value.lines[i];
+        const num = value.numbers[i];
+        const lineInfo = documentsInformation[uri].lines[num]; // Index out of bounds
+        const parseResult = parseCommand(line, num, commandTree);
+        lineInfo.issue = parseResult.diagnostic;
+        if (lineInfo.issue.range.end.character === -1) {
+            lineInfo.issue.range.end.character = line.length;
         }
-        connection.sendDiagnostics({
-            uri, diagnostics: documentsInformation[uri].lines.filter((line) => line.issue !== null).map<Diagnostic>((line) => {
-                const diagnostic = line.issue;
-                return diagnostic;
-            }),
+        parseResult.nodes.forEach((node) => {
+            lineInfo.Nodes.insert(node);
         });
     }
+    connection.sendDiagnostics({
+        uri, diagnostics: documentsInformation[uri].lines.filter((line) => line.issue !== null).map<Diagnostic>((line) => {
+            const diagnostic = line.issue;
+            return diagnostic;
+        }),
+    });
 }
