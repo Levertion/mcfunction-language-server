@@ -91,16 +91,14 @@ connection.onDidCloseTextDocument((params) => {
 });
 
 function LinesGot(value: GetLineResult, uri: string) {
-    connection.console.log("Get Lines Running");
     for (let i = 0; i < value.lines.length; i++) {
         const line = value.lines[i];
         const num = value.numbers[i];
-        const lineInfo = documentsInformation[uri].lines[num]; // Index out of bounds
         const parseResult = parseCommand(line, num, commandTree);
-        lineInfo.issue = parseResult.diagnostic;
+        documentsInformation[uri].lines[num].issue = parseResult.diagnostic;
         parseResult.nodes.forEach((node) => {
             if (node.high > node.low) {
-                lineInfo.Nodes.insert(node);
+                documentsInformation[uri].lines[num].Nodes.insert(node);
             }
         });
     }
