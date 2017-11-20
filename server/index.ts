@@ -75,7 +75,6 @@ connection.onDidChangeTextDocument((event) => {
         // Remove the changed lines, and then refill the new needed ones with empty trees. Probably needs testing :)
         documentsInformation[uri].lines.splice(result.newLine, result.oldLine - result.newLine + 1, ...Array<DocLine>(result.added).fill({ Nodes: new IntervalTree<NodeRange>() }));
     });
-    connection.console.log(`New lines: ${JSON.stringify(changedLines)}`);
     connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { LinesGot(value as GetLineResult, uri); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
 });
 
@@ -92,23 +91,26 @@ connection.onDidCloseTextDocument((params) => {
 });
 
 function LinesGot(value: GetLineResult, uri: string) {
+    connection.console.log("Get Lines Running");
     for (let i = 0; i < value.lines.length; i++) {
         const line = value.lines[i];
         const num = value.numbers[i];
         const lineInfo = documentsInformation[uri].lines[num]; // Index out of bounds
         const parseResult = parseCommand(line, num, commandTree);
         lineInfo.issue = parseResult.diagnostic;
-        if (lineInfo.issue.range.end.character === -1) {
-            lineInfo.issue.range.end.character = line.length;
-        }
         parseResult.nodes.forEach((node) => {
-            lineInfo.Nodes.insert(node);
+            if (node.high > node.low) {
+                lineInfo.Nodes.insert(node);
+            }
         });
     }
-    connection.sendDiagnostics({
-        uri, diagnostics: documentsInformation[uri].lines.filter((line) => line.issue !== null).map<Diagnostic>((line) => {
-            const diagnostic = line.issue;
-            return diagnostic;
-        }),
-    });
+    const diagnostics: Diagnostic[] = [];
+    for (const line of documentsInformation[uri].lines) {
+        if (line.issue) {
+            diagnostics.push(line.issue);
+        }
+    }
+    const calculatedDiagnostics = { uri, diagnostics };
+    connection.console.log(JSON.stringify(calculatedDiagnostics));
+    connection.sendDiagnostics(calculatedDiagnostics);
 }

@@ -141,7 +141,9 @@ export class StringReader {
      * Move the cursor one space
      */
     public skip() {
-        this.cursor++;
+        if (this.canRead()) {
+            this.cursor++;
+        }
     }
     /**
      * Go past any whitespace from the cursor's character

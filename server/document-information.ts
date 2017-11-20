@@ -25,7 +25,6 @@ export interface DocumentInformation {
     lines: DocLine[];
 }
 
-
 interface ChangedLinesResult {
     tracker: number[];
     added: number;

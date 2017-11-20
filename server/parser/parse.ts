@@ -36,58 +36,68 @@ interface CommandParseResult {
 interface AgainstNodeResult {
     diagnostic?: Diagnostic;
     nodes: NodeRange[];
+    successful: boolean;
 }
 
 function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, line: number): AgainstNodeResult | null {
     let diagnostic: Diagnostic;
+    let successful: boolean = false;
     const properties: Properties = node.properties || { key };
     properties.key = key;
     const nodes: NodeRange[] = [];
     const start = reader.cursor;
-    if (node.type === "literal") {
-        try {
-            LiteralArgument.parse(reader, properties);
-        } catch (error) {
-            if (!(error instanceof McError)) {
-                throw error;
+    switch (node.type) {
+        case "literal":
+            try {
+                LiteralArgument.parse(reader, properties);
+                successful = true;
+            } catch (error) {
+                if (!(error instanceof McError)) {
+                    throw error;
+                }
             }
-        }
-    } else if (node.type === "argument") {
-        try {
-            const parser = Parsers[node.parser];
-            parser.parse(reader, node.properties);
-        } catch (error) {
-            if (error instanceof McError) {
-                diagnostic = {
-                    code: error.type, message: error.computed, severity: DiagnosticSeverity.Error, source: "mcfunction", range: {
-                        start: {
-                            line,
-                            character: error.start,
-                        },
-                        end: {
-                            line,
-                            character: error.end,
-                        },
-                    },
-                };
-            } else {
-                throw error;
+            break;
+        case "argument":
+            try {
+                const parser = Parsers[node.parser];
+                parser.parse(reader, node.properties);
+                successful = true;
+            } catch (error) {
+                if (error instanceof McError) {
+                    diagnostic = Diagnostic.create(
+                        { start: { line, character: error.start }, end: { line, character: error.end === -1 ? reader.string.length : error.end } },
+                        error.computed, DiagnosticSeverity.Error, error.type, "mcfunction");
+                } else {
+                    throw error;
+                }
             }
-        }
+            break;
+        case "root":
+            reader.cursor--; // Ignore the space added by default
+            successful = true;
+        default:
+            break;
     }
-    if (!diagnostic) {
+    if (successful) {
         nodes.push({ low: start, high: reader.cursor, key });
-        reader.skip();
-        // tslint:disable-next-line:forin
-        for (const childKey in node.children) {
-            const parseResult = parseAgainstNode(node.children[childKey], reader, childKey, line);
-            if (parseResult) {
+        reader.skip(); // Add in space
+        if (reader.canRead()) {
+            let succeeded: boolean;
+            const begin: number = reader.cursor;
+            // tslint:disable-next-line:forin
+            for (const childKey in node.children) {
+                const parseResult = parseAgainstNode(node.children[childKey], reader, childKey, line);
                 nodes.concat(parseResult.nodes);
                 diagnostic = parseResult.diagnostic;
+                succeeded = succeeded ? true : parseResult.successful;
+                reader.cursor = begin;
+            }
+            if (!succeeded && diagnostic !== null) {
+                diagnostic = Diagnostic.create({ start: { line, character: begin }, end: { line, character: reader.string.length } }, `No node which matched ${reader.getRemaining()}.`, DiagnosticSeverity.Error, "levertion.node.notfound", "mcfunction");
             }
         }
     }
-    return { diagnostic, nodes };
+    return { diagnostic, nodes, successful };
 }
 
 export function parseCommand(command: string, line: number, tree: CommandNode): CommandParseResult {
