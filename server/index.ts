@@ -66,7 +66,6 @@ connection.onDidChangeConfiguration(() => {
 });
 
 connection.onDidChangeTextDocument((event) => {
-    connection.sendDiagnostics({ uri: event.textDocument.uri, diagnostics: [] }); // Clear existing diagnostics
     const uri: string = event.textDocument.uri;
     let changedLines: number[] = [];
     event.contentChanges.forEach((change) => {
@@ -81,7 +80,7 @@ connection.onDidChangeTextDocument((event) => {
 connection.onDidOpenTextDocument((params) => {
     connection.console.log("Document Opened");
     const lines = params.textDocument.text.split(/\r?\n/g);
-    documentsInformation[params.textDocument.uri] = { lines: new Array<DocLine>(lines.length).fill({ Nodes: new IntervalTree<NodeRange>() }) };
+    documentsInformation[params.textDocument.uri] = { lines: new Array(lines.length).fill("U").map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })) };
     LinesGot({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i) }, params.textDocument.uri);
 });
 
@@ -95,7 +94,9 @@ function LinesGot(value: GetLineResult, uri: string) {
         const line = value.lines[i];
         const num = value.numbers[i];
         const parseResult = parseCommand(line, num, commandTree);
-        documentsInformation[uri].lines[num].issue = parseResult.diagnostic;
+        if (parseResult.diagnostic) {
+            documentsInformation[uri].lines[num].issue = parseResult.diagnostic;
+        }
         parseResult.nodes.forEach((node) => {
             if (node.high > node.low) {
                 documentsInformation[uri].lines[num].Nodes.insert(node);
@@ -113,5 +114,6 @@ function LinesGot(value: GetLineResult, uri: string) {
     }
     const calculatedDiagnostics = { uri, diagnostics };
     connection.console.log(JSON.stringify(calculatedDiagnostics));
+    connection.sendDiagnostics({ uri, diagnostics: [] }); // Clear existing diagnostics
     connection.sendDiagnostics(calculatedDiagnostics);
 }
