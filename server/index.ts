@@ -103,8 +103,11 @@ function LinesGot(value: GetLineResult, uri: string) {
         });
     }
     const diagnostics: Diagnostic[] = [];
-    for (const line of documentsInformation[uri].lines) {
+    for (let i = 0; i < documentsInformation[uri].lines.length; i++) {
+        const line = documentsInformation[uri].lines[i];
         if (line.issue) {
+            line.issue.range.start.line = i;
+            line.issue.range.end.line = i;
             diagnostics.push(line.issue);
         }
     }
