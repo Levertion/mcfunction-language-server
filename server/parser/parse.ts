@@ -39,7 +39,7 @@ interface AgainstNodeResult {
     successful: boolean;
 }
 
-function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, line: number): AgainstNodeResult | null {
+function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, line: number): AgainstNodeResult {
     let diagnostic: Diagnostic;
     let successful: boolean = false;
     const properties: Properties = node.properties || { key };
@@ -82,20 +82,39 @@ function parseAgainstNode(node: CommandNode, reader: StringReader, key: string, 
         nodes.push({ low: start, high: reader.cursor, key });
         reader.skip(); // Add in space
         if (reader.canRead()) {
-            let succeeded: boolean;
-            const begin: number = reader.cursor;
-            // tslint:disable-next-line:forin
-            for (const childKey in node.children) {
-                const parseResult = parseAgainstNode(node.children[childKey], reader, childKey, line);
-                nodes.concat(parseResult.nodes);
-                diagnostic = parseResult.diagnostic;
-                succeeded = succeeded || parseResult.successful;
-                reader.cursor = begin;
+            let tree: CommandNode;
+            if (!!node.redirect) {
+                tree = getRedirectedNode(node.redirect);
+            } else {
+                tree = node;
             }
-            if (!succeeded && diagnostic !== null) {
-                diagnostic = Diagnostic.create({ start: { line, character: begin }, end: { line, character: reader.string.length } }, `No node which matched ${reader.getRemaining()}.`, DiagnosticSeverity.Error, "levertion.node.notfound", "mcfunction");
-            }
+            const childResult = testChildren(tree, reader, line);
+            diagnostic = childResult.diagnostic;
+            nodes.concat(childResult.nodes);
+            successful = childResult.successful;
         }
+    }
+    return { diagnostic, nodes, successful };
+}
+
+function testChildren(node: CommandNode, reader: StringReader, line: number): AgainstNodeResult {
+    let diagnostic: Diagnostic;
+    const nodes: NodeRange[] = [];
+    let successful: boolean = false;
+    const begin: number = reader.cursor;
+    // tslint:disable-next-line:forin
+    for (const childKey in node.children) {
+        const parseResult = parseAgainstNode(node.children[childKey], reader, childKey, line);
+        nodes.concat(parseResult.nodes);
+        diagnostic = parseResult.diagnostic;
+        if (parseResult.successful) {
+            successful = true;
+            break;
+        }
+        reader.cursor = begin;
+    }
+    if (!successful && diagnostic !== null) {
+        diagnostic = Diagnostic.create({ start: { line, character: begin }, end: { line, character: reader.string.length } }, `No node which matched ${reader.getRemaining()}.`, DiagnosticSeverity.Error, "levertion.node.notfound", "mcfunction");
     }
     return { diagnostic, nodes, successful };
 }
