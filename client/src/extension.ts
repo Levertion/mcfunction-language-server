@@ -77,6 +77,7 @@ export function activate(context: ExtensionContext) {
             };
             defaultClient = new LanguageClient("mcfunction-lsp", "Minecraft Function Language Server", serverOptions, clientOptions);
             defaultClient.start();
+            defaultClient.onReady().then(() => clientSetup(defaultClient));
             return;
         }
         let folder = workspace.getWorkspaceFolder(uri);
@@ -105,19 +106,7 @@ export function activate(context: ExtensionContext) {
             const client = new LanguageClient("mcfunction-lsp", "Minecraft Function Language Server", serverOptions, clientOptions);
             client.start();
             clients.set(folder.uri.toString(), client);
-            client.onReady().then(() => {
-                client.onRequest("getDocumentLines", (textDocument: VersionedTextDocumentIdentifier, changedLines: number[]) => {
-                    for (const doc of workspace.textDocuments) {
-                        if (textDocument.uri === doc.uri.toString()) {
-                            if (doc.version === document.version) {
-                                return { lines: changedLines.map<string>((lineNo) => doc.lineAt(lineNo).text), numbers: changedLines };
-                            } else {
-                                return null;
-                            }
-                        }
-                    }
-                });
-            });
+            client.onReady().then(() => clientSetup(defaultClient));
         }
     }
 
@@ -129,6 +118,20 @@ export function activate(context: ExtensionContext) {
             if (client) {
                 clients.delete(folder.uri.toString());
                 client.stop();
+            }
+        }
+    });
+}
+
+function clientSetup(client) {
+    client.onRequest("getDocumentLines", (textDocument: VersionedTextDocumentIdentifier, changedLines: number[]) => {
+        for (const doc of workspace.textDocuments) {
+            if (textDocument.uri === doc.uri.toString()) {
+                if (doc.version === doc.version) {
+                    return { lines: changedLines.map<string>((lineNo) => doc.lineAt(lineNo).text), numbers: changedLines, uri: textDocument.uri };
+                } else {
+                    return null;
+                }
             }
         }
     });
