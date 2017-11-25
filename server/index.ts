@@ -13,7 +13,6 @@ import {
     createConnection, Diagnostic, TextDocumentSyncKind,
 } from "vscode-languageserver";
 import { DocLine, DocumentInformation, getChangedLines, NodeRange } from "./document-information";
-import { CommandNode, parseCommand } from "./parser/parse";
 
 // Creates the LSP connection
 const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
@@ -38,7 +37,6 @@ const commandTree: CommandNode = {
                     type: "argument",
                     parser: "brigadier:integer",
                     properties: {
-                        // @ts-ignore due to the way properties are implemented, this is invalid for properties but valid for an actual tree.
                         min: -10,
                         max: 100,
                     },
