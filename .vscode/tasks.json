@@ -30,12 +30,6 @@
                 "kind": "build",
                 "isDefault": true
             }
-        },
-        {
-            "label": "Minify",
-            "type": "shell",
-            "command": "minify-json ./server/vanilla_commands/tree.json",
-            "problemMatcher": []
         }
     ]
 }
