@@ -33,7 +33,7 @@ connection.onInitialize((params) => {
     serverInfo.connection = connection;
     serverInfo.tree = {
         type: "root", children: {
-            test: { type: "literal" },
+            test: { type: "literal", executable: true },
         },
     };
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);

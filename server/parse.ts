@@ -71,19 +71,20 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
         }
     }
     if (!!successful) {
-        if (reader.canRead() && reader.peek() === " ") {
-            if (reader.canRead()) {
-                if (!!node.children[successful].children) {
+        if (reader.canRead()) {
+            if (!!node.children[successful].children) {
+                if (reader.peek() === " ") {
+                    reader.skip();
                     const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
                     issue = parseResult.issue;
                     nodes.concat(parseResult.nodes);
                 } else {
-                    issue = new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless").create(reader.cursor, reader, reader.getRemaining());
+                    issue = new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace").create(reader.cursor, reader, reader.string.substring(reader.cursor));
                 }
-            } else if (!node.executable) {
-                issue = new CommandSyntaxException("Unexpected whitespace: argument missing", "command.parsing.whitespace").create(reader.cursor - 1, reader, reader.string.substring(reader.cursor - 1));
+            } else {
+                issue = new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless").create(reader.cursor + 1, reader, reader.getRemaining());
             }
-        } else if (!node.executable) {
+        } else if (!node.children[successful].executable) {
             issue = new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete").create(0, reader, reader.string);
         }
     } else if (!issue) {

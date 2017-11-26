@@ -9,19 +9,25 @@ const LITERALEXCEPTIONS = {
 export const literalArgumentParser: Parser = {
     parse: (reader: StringReader, properties: NodeProperties) => {
         const begin = reader.cursor;
+        let escaped: boolean = false;
         for (const char of properties.key) {
             if (char === reader.peek()) {
                 if (reader.canRead()) {
                     reader.skip();
                 } else {
+                    escaped = true;
                     break;
                 }
             } else {
                 throw LITERALEXCEPTIONS.IncorrectLiteral.create(begin, reader, properties.key, reader.string.substring(begin, reader.cursor));
             }
         }
-        if (reader.peek() !== " " || !reader.canRead()) {
-            throw LITERALEXCEPTIONS.MissingSpace.create(reader.cursor, reader, reader.string.substring(reader.cursor));
+        // Undo Extra Skip
+        if (!escaped) {
+            if (reader.peek() !== " ") {
+                throw LITERALEXCEPTIONS.MissingSpace.create(reader.cursor, reader, reader.string.substring(reader.cursor));
+            }
+            reader.cursor = reader.cursor - 1;
         }
     },
     getSuggestions: (start: string, properties: NodeProperties) => {
