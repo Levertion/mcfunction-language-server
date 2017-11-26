@@ -106,7 +106,7 @@ export function activate(context: ExtensionContext) {
             const client = new LanguageClient("mcfunction-lsp", "Minecraft Function Language Server", serverOptions, clientOptions);
             client.start();
             clients.set(folder.uri.toString(), client);
-            client.onReady().then(() => clientSetup(defaultClient));
+            client.onReady().then(() => clientSetup(client));
         }
     }
 
