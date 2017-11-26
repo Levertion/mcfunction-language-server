@@ -1,6 +1,6 @@
 import { Interval, IntervalTree } from "node-interval-tree";
 import { format } from "util";
-import { DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
+import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { StringReader } from "./brigadier-implementations";
 
 /**
@@ -27,11 +27,11 @@ export interface CommandNode {
     /**
      * The properties of a node for the parser to use.
      */
-    properties: NodeProperties;
+    properties?: NodeProperties;
     /**
      * Whether the command could be run from this point
      */
-    executable: boolean;
+    executable?: boolean;
     /**
      * A redirect of the node.  
      * This is a path to act as if this node was that node in terms of children.
@@ -110,10 +110,16 @@ export interface DocLine {
 export interface FunctionDiagnostic {
     type: string;
     message: string;
-    source: "mcfunction";
     severity: DiagnosticSeverity;
     start: number;
     end: number;
+}
+
+export function toDiagnostic(diagnosis: FunctionDiagnostic, line: number): Diagnostic {
+    return Diagnostic.create({
+        start: { line, character: diagnosis.start },
+        end: { line, character: diagnosis.end },
+    }, diagnosis.message, diagnosis.severity, diagnosis.type, "mcfunction");
 }
 
 export interface Parser {
@@ -136,9 +142,11 @@ export class CommandSyntaxException {
         this.severity = severity || DiagnosticSeverity.Error;
     }
     public create(start: number, end: number | StringReader, ...formatting: any[]): FunctionDiagnostic {
-        const diagnosis: FunctionDiagnostic = { source: "mcfunction", severity: this.severity } as FunctionDiagnostic;
+        const diagnosis: FunctionDiagnostic = { severity: this.severity } as FunctionDiagnostic;
         if (end instanceof StringReader) {
             diagnosis.end = end.string.length;
+        } else {
+            diagnosis.end = end;
         }
         diagnosis.start = start;
         diagnosis.message = format(this.description, ...formatting);
