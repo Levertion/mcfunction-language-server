@@ -42,7 +42,7 @@ export class StringReader {
             this.string = input.string;
             this.cursor = input.cursor;
         } else {
-            this.cursor = 0;
+            this._cursor = 0;
             this.string = input;
         }
     }
