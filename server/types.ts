@@ -1,6 +1,6 @@
 import { Interval, IntervalTree } from "node-interval-tree";
 import { format } from "util";
-import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
+import { DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { StringReader } from "./brigadier-implementations";
 
 /**
@@ -37,6 +37,10 @@ export interface CommandNode {
      * This is a path to act as if this node was that node in terms of children.
      */
     redirect?: NodePath;
+    /**
+     * The children of this node.
+     */
+    children?: { [key: string]: CommandNode };
 }
 /**
  * The properties of a node for the parser to use
@@ -99,7 +103,7 @@ export interface DocumentInformation {
     lines: DocLine[];
 }
 export interface DocLine {
-    issue?: Diagnostic;
+    issue?: FunctionDiagnostic;
     Nodes: IntervalTree<NodeRange>;
 }
 
@@ -110,6 +114,16 @@ export interface FunctionDiagnostic {
     severity: DiagnosticSeverity;
     start: number;
     end: number;
+}
+
+export interface Parser {
+    parse: (reader: StringReader, properties: NodeProperties, serverInfo?: ServerInformation) => void;
+    getSuggestions: (text: string, properties: NodeProperties, serverInfo?: ServerInformation) => string[];
+}
+
+export interface ParseResult {
+    nodes?: NodeRange[];
+    issue?: FunctionDiagnostic;
 }
 
 export class CommandSyntaxException {
