@@ -1,6 +1,7 @@
+import { Diagnostic } from "vscode-languageserver/lib/main";
 import { StringReader } from "./brigadier-implementations";
 import { literalArgumentParser } from "./parsers/literal";
-import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation } from "./types";
+import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation, toDiagnostic } from "./types";
 
 // Exported only to allow assertion of a lines to parse in the "getDocumentLines" callback, which normally has an any type
 export interface LinesToParse {
@@ -9,7 +10,6 @@ export interface LinesToParse {
     numbers: number[];
 }
 export function parseLines(value: LinesToParse, serverInfo: ServerInformation) {
-    value.lines.push();
     for (let index = 0; index < value.numbers.length; index++) {
         const text = value.lines[index];
         const lineNo = value.numbers[index];
@@ -18,8 +18,19 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation) {
             const reader = new StringReader(text);
             const result = parseChildren(serverInfo.tree, reader, [], serverInfo);
             info.issue = result.issue;
+            /* for (const node of result.nodes) {
+                info.Nodes.insert(node);
+            } */
         }
     }
+    const diagnostics: Diagnostic[] = [];
+    for (let i = 0; i < serverInfo.documentsInformation[value.uri].lines.length; i++) {
+        const diagnostic = serverInfo.documentsInformation[value.uri].lines[i];
+        if (diagnostic.issue) {
+            diagnostics.push(toDiagnostic(diagnostic.issue, i));
+        }
+    }
+    serverInfo.connection.sendDiagnostics({ uri: value.uri, diagnostics });
 }
 
 function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, serverInfo: ServerInformation): ParseResult {
@@ -63,14 +74,18 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
     }
     if (!!successful) {
         if (reader.canRead()) {
-            const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
-            issue = parseResult.issue;
-            nodes.concat(parseResult.nodes);
+            if (!!node.children[successful].children) {
+                const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
+                issue = parseResult.issue;
+                nodes.concat(parseResult.nodes);
+            } else {
+                issue = new CommandSyntaxException("Temp", "command.parsing.childless").create(reader.cursor, reader, reader.getRemaining());
+            }
         } else if (!node.executable) {
             issue = new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete").create(0, reader, reader.string);
         }
     } else if (!issue) {
-        issue = new CommandSyntaxException("No nodes which matched %s found", "command.parsing.nomatch").create(begin, reader, reader.getRemaining());
+        issue = new CommandSyntaxException("No nodes which matched %s found", "command.parsing.matchless").create(begin, reader, reader.getRemaining());
     }
     return { nodes, issue };
 }

@@ -31,6 +31,11 @@ connection.onInitialize((params) => {
     serverInfo.workspaceFolder = params.rootUri;
     serverInfo.documentsInformation = {};
     serverInfo.connection = connection;
+    serverInfo.tree = {
+        type: "root", children: {
+            test: { type: "literal" },
+        },
+    };
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);
     return {
         capabilities: {
@@ -50,6 +55,7 @@ connection.onDidChangeConfiguration(() => {
 
 // Respond to one of the text documents changing.
 connection.onDidChangeTextDocument((event) => {
+    connection.sendDiagnostics({ uri: event.textDocument.uri, diagnostics: [] });
     const uri: string = event.textDocument.uri;
     const changedLines: number[] = [];
     for (const change of event.contentChanges) {
