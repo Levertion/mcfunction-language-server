@@ -54,8 +54,9 @@ connection.onDidChangeTextDocument((event) => {
     const changedLines: number[] = [];
     for (const change of event.contentChanges) {
         const result = getChangedLines(change);
+        changedLines.push(...result.tracker);
         // Remove the changed lines, and then refill the new needed ones with empty trees.
-        serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.oldLine - result.newLine + 1, ...Array(result.tracker.length).map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })));
+        serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.changedNumber, ...Array(result.tracker.length).fill(0).map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })));
     }
     // See https://stackoverflow.com/a/14438954. From discussion seems like this is the easiest way.
     changedLines.filter((value, index, self) => self.indexOf(value) === index);
