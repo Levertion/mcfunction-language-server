@@ -69,7 +69,7 @@ export class StringReader {
      * @param length The number of characters. Can be omitted
      */
     public canRead(length: number = 1) {
-        return this.cursor + length <= this.string.length;
+        return this.cursor + length < this.string.length;
     }
     /**
      * Look at a character without moving the cursor.
