@@ -57,9 +57,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                         break child_loop;
                     } catch (error) {
                         reader.cursor = begin;
-                        if (!(error instanceof CommandSyntaxException)) {
-                            serverInfo.connection.console.error(`${JSON.stringify(error)}`);
-                        }
+                        serverInfo.connection.console.error(`${JSON.stringify(error)}`);
                     }
                     break;
                 case "argument":
@@ -73,13 +71,17 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
         }
     }
     if (!!successful) {
-        if (reader.canRead()) {
-            if (!!node.children[successful].children) {
-                const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
-                issue = parseResult.issue;
-                nodes.concat(parseResult.nodes);
-            } else {
-                issue = new CommandSyntaxException("Temp", "command.parsing.childless").create(reader.cursor, reader, reader.getRemaining());
+        if (reader.canRead() && reader.peek() === " ") {
+            if (reader.canRead()) {
+                if (!!node.children[successful].children) {
+                    const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
+                    issue = parseResult.issue;
+                    nodes.concat(parseResult.nodes);
+                } else {
+                    issue = new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless").create(reader.cursor, reader, reader.getRemaining());
+                }
+            } else if (!node.executable) {
+                issue = new CommandSyntaxException("Unexpected whitespace: argument missing", "command.parsing.whitespace").create(reader.cursor - 1, reader, reader.string.substring(reader.cursor - 1));
             }
         } else if (!node.executable) {
             issue = new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete").create(0, reader, reader.string);
