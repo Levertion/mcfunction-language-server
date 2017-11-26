@@ -25,12 +25,12 @@ connection.listen();
  * Initialised as invalid ServerInfo  
  * will be setup in connection.onInitialise, but needs to be accessed in module scope.
  */
-const ServerInfo: ServerInformation = {} as ServerInformation;
+const serverInfo: ServerInformation = {} as ServerInformation;
 // Setup the server.
 connection.onInitialize((params) => {
-    ServerInfo.workspaceFolder = params.rootUri;
-    ServerInfo.documentsInformation = {};
-    ServerInfo.connection = connection;
+    serverInfo.workspaceFolder = params.rootUri;
+    serverInfo.documentsInformation = {};
+    serverInfo.connection = connection;
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);
     return {
         capabilities: {
@@ -55,21 +55,21 @@ connection.onDidChangeTextDocument((event) => {
     for (const change of event.contentChanges) {
         const result = getChangedLines(change);
         // Remove the changed lines, and then refill the new needed ones with empty trees.
-        ServerInfo.documentsInformation[uri].lines.splice(result.newLine, result.oldLine - result.newLine + 1, ...Array(result.tracker.length).map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })));
+        serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.oldLine - result.newLine + 1, ...Array(result.tracker.length).map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })));
     }
     // See https://stackoverflow.com/a/14438954. From discussion seems like this is the easiest way.
     changedLines.filter((value, index, self) => self.indexOf(value) === index);
-    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as LinesToParse, ServerInfo); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
+    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as LinesToParse, serverInfo); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
 });
 
 connection.onDidOpenTextDocument((params) => {
     connection.console.log("Document Opened");
     const lines = params.textDocument.text.split(/\r?\n/g);
-    ServerInfo.documentsInformation[params.textDocument.uri] = { lines: new Array(lines.length).fill("U").map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })) };
-    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, ServerInfo);
+    serverInfo.documentsInformation[params.textDocument.uri] = { lines: new Array(lines.length).fill("U").map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })) };
+    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo);
 });
 
 connection.onDidCloseTextDocument((params) => {
     connection.console.log("Document Closed");
-    delete ServerInfo.documentsInformation[params.textDocument.uri];
+    delete serverInfo.documentsInformation[params.textDocument.uri];
 });
