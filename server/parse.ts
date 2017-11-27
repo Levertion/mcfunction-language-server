@@ -73,8 +73,8 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
     if (!!successful) {
         if (reader.canRead()) {
             if (!!node.children[successful].children) {
-                if (reader.peek() === " ") {
-                    reader.skip();
+                if (reader.peek(1) === " ") {
+                    reader.cursor += 2;
                     const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
                     issue = parseResult.issue;
                     nodes.concat(parseResult.nodes);
