@@ -1,6 +1,6 @@
 import { Interval, IntervalTree } from "node-interval-tree";
 import { format } from "util";
-import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
+import { Diagnostic, DiagnosticSeverity } from "vscode-languageserver/lib/main";
 import { StringReader } from "./brigadier-implementations";
 
 /**
