@@ -92,8 +92,10 @@ export class StringReader {
         }
     }
     public skipWhitespace() {
-        while (this.canRead() && /^\s$/.test(this.peek())) {
-            this.skip();
+        while (/^\s$/.test(this.peek())) {
+            if (this.canRead()) {
+                this.skip();
+            } else { break; }
         }
     }
     /**
@@ -101,10 +103,16 @@ export class StringReader {
      */
     public readInt(): number {
         const start: number = this.cursor;
-        while (this.canRead() && StringReader.isAllowedNumber(this.peek())) {
-            this.skip();
+        let read = 0;
+        while (StringReader.isAllowedNumber(this.peek())) {
+            read++;
+            if (this.canRead()) {
+                this.skip();
+            } else {
+                break;
+            }
         }
-        const readToTest: string = this.string.substring(start, this.cursor);
+        const readToTest: string = this.string.substr(start, read);
         if (readToTest.length === 0) {
             throw StringReader.EXCEPTIONS.ExpectedInt.create(start, this);
         }
@@ -119,10 +127,14 @@ export class StringReader {
      */
     public readDouble(): number {
         const start: number = this.cursor;
-        while (this.canRead() && StringReader.isAllowedNumber(this.peek())) {
-            this.skip();
+        let read = 0;
+        while (StringReader.isAllowedNumber(this.peek())) {
+            read++;
+            if (this.canRead()) {
+                this.skip();
+            } else { break; }
         }
-        const readToTest: string = this.string.substring(start, this.cursor);
+        const readToTest: string = this.string.substr(start, read);
         if (readToTest.length === 0) {
             throw StringReader.EXCEPTIONS.ExpectedDouble.create(start, this);
         }
