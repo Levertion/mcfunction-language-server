@@ -2,11 +2,10 @@
  * These are implementations of parts of the brigadier command parsing system, for which the source is available as explained in the README at root.  
  * These are recreated to be more closely fitting to the Language server methodology
  */
+import { QUOTE, STRINGESCAPE } from "./consts";
 import { CommandSyntaxException } from "./types";
 
 export class StringReader {
-    public static SYNTAX_ESCAPE: string = "\\";
-    public static SYNTAX_QUOTE: string = '"';
     private static EXCEPTIONS = {
         ExpectedInt: new CommandSyntaxException("An Integer was expected but null was found instead", "parsing.int.expected"),
         InvalidInt: new CommandSyntaxException("Invalid integer '%s'", "parsing.int.invalid"),
@@ -150,7 +149,7 @@ export class StringReader {
         const start = this.cursor;
         if (!this.canRead()) {
             return "";
-        } else if (this.peek() !== StringReader.SYNTAX_QUOTE) {
+        } else if (this.peek() !== QUOTE) {
             throw StringReader.EXCEPTIONS.ExpectedStartOfQuote.create(this.cursor, this);
         }
         this.skip();
@@ -159,16 +158,16 @@ export class StringReader {
         while (this.canRead()) {
             const c: string = this.read();
             if (escaped) {
-                if (c === StringReader.SYNTAX_QUOTE || c === StringReader.SYNTAX_ESCAPE) {
+                if (c === QUOTE || c === STRINGESCAPE) {
                     result += c;
                     escaped = false;
                 } else {
                     this.cursor = this.cursor - 1;
                     throw StringReader.EXCEPTIONS.InvalidEscape.create(this.cursor, this.string.length, c);
                 }
-            } else if (c === StringReader.SYNTAX_ESCAPE) {
+            } else if (c === STRINGESCAPE) {
                 escaped = true;
-            } else if (c === StringReader.SYNTAX_QUOTE) {
+            } else if (c === QUOTE) {
                 return result.toString();
             } else {
                 result += c;
@@ -180,7 +179,7 @@ export class StringReader {
      * Read a string from the string. If it surrounded by quotes, the quotes are ignored
      */
     public readString(): string {
-        if (this.canRead() && this.peek() === StringReader.SYNTAX_QUOTE) {
+        if (this.canRead() && this.peek() === QUOTE) {
             return this.readString();
         } else {
             return this.readUnquotedString();

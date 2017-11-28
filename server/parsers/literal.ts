@@ -1,5 +1,6 @@
 import { StringReader } from "../brigadier-implementations";
 import { CommandSyntaxException, NodeProperties, Parser } from "../types";
+import { ARGUMENTSEPERATOR } from "../consts";
 
 const LITERALEXCEPTIONS = {
     IncorrectLiteral: new CommandSyntaxException("Expected literal %s, got %s", "argument.literal.incorrect"),
@@ -23,7 +24,7 @@ export const literalArgumentParser: Parser = {
             // Otherwise, throw an error
             throw LITERALEXCEPTIONS.IncorrectLiteral.create(begin, reader.cursor + 1, properties.key, reader.string.substring(begin, reader.cursor));
         }
-        if (reader.canRead() && reader.peek(1) !== " ") {
+        if (reader.canRead() && reader.peek(1) !== ARGUMENTSEPERATOR) {
             throw LITERALEXCEPTIONS.MissingSpace.create(reader.cursor + 1, reader, reader.string.substring(reader.cursor + 1));
         }
     },

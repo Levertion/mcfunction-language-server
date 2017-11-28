@@ -1,5 +1,6 @@
 import { Diagnostic, IConnection } from "vscode-languageserver/lib/main";
 import { StringReader } from "./brigadier-implementations";
+import { ARGUMENTSEPERATOR } from "./consts";
 import { literalArgumentParser } from "./parsers/literal";
 import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation, toDiagnostic } from "./types";
 
@@ -73,7 +74,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
     if (!!successful) {
         if (reader.canRead()) {
             if (!!node.children[successful].children) {
-                if (reader.peek(1) === " ") {
+                if (reader.peek(1) === ARGUMENTSEPERATOR) {
                     reader.cursor += 2;
                     const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
                     issue = parseResult.issue;
