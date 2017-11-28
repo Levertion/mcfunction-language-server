@@ -35,6 +35,21 @@
             "outFiles": [
                 "${workspaceRoot}/client/server/**/*.js"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha Tests",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "-u",
+                "tdd",
+                "--timeout",
+                "999999",
+                "--colors",
+                "${workspaceFolder}/client/out/server/test/**/*.js"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }
