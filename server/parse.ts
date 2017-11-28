@@ -1,4 +1,4 @@
-import { Diagnostic } from "vscode-languageserver/lib/main";
+import { Diagnostic, IConnection } from "vscode-languageserver/lib/main";
 import { StringReader } from "./brigadier-implementations";
 import { literalArgumentParser } from "./parsers/literal";
 import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation, toDiagnostic } from "./types";
@@ -9,7 +9,7 @@ export interface LinesToParse {
     lines: string[];
     numbers: number[];
 }
-export function parseLines(value: LinesToParse, serverInfo: ServerInformation) {
+export function parseLines(value: LinesToParse, serverInfo: ServerInformation, connection: IConnection) {
     for (let index = 0; index < value.numbers.length; index++) {
         const text = value.lines[index];
         const lineNo = value.numbers[index];
@@ -30,7 +30,7 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation) {
             diagnostics.push(toDiagnostic(diagnostic.issue, i));
         }
     }
-    serverInfo.connection.sendDiagnostics({ uri: value.uri, diagnostics });
+    connection.sendDiagnostics({ uri: value.uri, diagnostics });
 }
 
 function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, serverInfo: ServerInformation): ParseResult {
@@ -57,12 +57,12 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                         break child_loop;
                     } catch (error) {
                         reader.cursor = begin;
-                        serverInfo.connection.console.error(`${JSON.stringify(error)}`);
+                        serverInfo.logger(`${JSON.stringify(error)}`);
                     }
                     break;
                 case "argument":
                     // Temporary - parsers must be implemented first
-                    serverInfo.connection.console.log("Argument child reached");
+                    serverInfo.logger("Argument child reached");
                     break;
                 default:
                     // Mangled input. Easiest to leave for the moment

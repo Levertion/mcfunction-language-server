@@ -96,7 +96,7 @@ export interface ServerInformation {
      * The connection to the client.  
      * This is mostly to be used to allowing console logging for debugging
      */
-    connection: IConnection;
+    logger: (message: string) => void;
 }
 
 export interface DocumentInformation {

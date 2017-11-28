@@ -30,10 +30,11 @@ const serverInfo: ServerInformation = {} as ServerInformation;
 connection.onInitialize((params) => {
     serverInfo.workspaceFolder = params.rootUri;
     serverInfo.documentsInformation = {};
-    serverInfo.connection = connection;
+    serverInfo.logger = connection.console.log;
     serverInfo.tree = {
         type: "root", children: {
             test: { type: "literal", executable: true },
+            test2: { type: "literal", children: { testChild: { type: "literal", executable: true } } },
         },
     };
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);
@@ -66,14 +67,14 @@ connection.onDidChangeTextDocument((event) => {
     }
     // See https://stackoverflow.com/a/14438954. From discussion seems like this is the easiest way.
     changedLines.filter((value, index, self) => self.indexOf(value) === index);
-    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as LinesToParse, serverInfo); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
+    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as LinesToParse, serverInfo, connection); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
 });
 
 connection.onDidOpenTextDocument((params) => {
     connection.console.log("Document Opened");
     const lines = params.textDocument.text.split(/\r?\n/g);
     serverInfo.documentsInformation[params.textDocument.uri] = { lines: new Array(lines.length).fill("U").map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })) };
-    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo);
+    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo, connection);
 });
 
 connection.onDidCloseTextDocument((params) => {
