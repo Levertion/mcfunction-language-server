@@ -21,7 +21,7 @@ export const literalArgumentParser: Parser = {
                 }
             }
             // Otherwise, throw an error
-            throw LITERALEXCEPTIONS.IncorrectLiteral.create(begin, reader, properties.key, reader.string.substring(begin, reader.cursor));
+            throw LITERALEXCEPTIONS.IncorrectLiteral.create(begin, reader.cursor + 1, properties.key, reader.string.substring(begin, reader.cursor));
         }
         if (reader.canRead() && reader.peek(1) !== " ") {
             throw LITERALEXCEPTIONS.MissingSpace.create(reader.cursor + 1, reader, reader.string.substring(reader.cursor + 1));
