@@ -1,7 +1,7 @@
 import { Diagnostic, IConnection } from "vscode-languageserver/lib/main";
-import { StringReader } from "./brigadier-implementations";
 import { ARGUMENTSEPERATOR } from "./consts";
 import { literalArgumentParser } from "./parsers/literal";
+import { StringReader } from "./string-reader";
 import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation, toDiagnostic } from "./types";
 
 // Exported only to allow assertion of a lines to parse in the "getDocumentLines" callback, which normally has an any type
@@ -54,6 +54,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                     try {
                         literalArgumentParser.parse(reader, childProperties);
                         successful = childKey;
+                        issue = null;
                         nodes.push();
                         break child_loop;
                     } catch (error) {
@@ -64,7 +65,15 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                 case "argument":
                     // Temporary - parsers must be implemented first
                     serverInfo.logger("Argument child reached");
-                    break;
+                    if (!successful) {
+                        try {
+
+                        } catch (error) {
+                            reader.cursor = begin;
+                            issue = error;
+                        }
+                    }
+                    continue child_loop;
                 default:
                     // Mangled input. Easiest to leave for the moment
                     break;

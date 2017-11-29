@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import { StringReader } from "../../brigadier-implementations";
 import { literalArgumentParser } from "../../parsers/literal";
+import { StringReader } from "../../string-reader";
 import { FunctionDiagnostic, NodeProperties } from "../../types";
 
 describe("Literal Arguemnt Parser", () => {

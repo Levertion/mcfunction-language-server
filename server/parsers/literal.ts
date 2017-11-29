@@ -1,6 +1,6 @@
-import { StringReader } from "../brigadier-implementations";
-import { CommandSyntaxException, NodeProperties, Parser } from "../types";
 import { ARGUMENTSEPERATOR } from "../consts";
+import { StringReader } from "../string-reader";
+import { CommandSyntaxException, NodeProperties, Parser } from "../types";
 
 const LITERALEXCEPTIONS = {
     IncorrectLiteral: new CommandSyntaxException("Expected literal %s, got %s", "argument.literal.incorrect"),
