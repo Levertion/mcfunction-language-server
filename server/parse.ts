@@ -89,16 +89,16 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                     issue = parseResult.issue;
                     nodes.concat(parseResult.nodes);
                 } else {
-                    issue = new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace").create(reader.cursor, reader, reader.string.substring(reader.cursor));
+                    issue = new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace").create(reader.cursor, reader.string.length, reader.string.substring(reader.cursor));
                 }
             } else {
-                issue = new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless").create(reader.cursor + 1, reader, reader.getRemaining());
+                issue = new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless").create(reader.cursor + 1, reader.string.length, reader.getRemaining());
             }
         } else if (!node.children[successful].executable) {
-            issue = new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete").create(0, reader, reader.string);
+            issue = new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete").create(0, reader.string.length, reader.string);
         }
     } else if (!issue) {
-        issue = new CommandSyntaxException("No nodes which matched %s found", "command.parsing.matchless").create(begin, reader, reader.getRemaining());
+        issue = new CommandSyntaxException("No nodes which matched %s found", "command.parsing.matchless").create(begin, reader.string.length, reader.getRemaining());
     }
     return { nodes, issue };
 }

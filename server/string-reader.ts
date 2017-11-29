@@ -39,7 +39,7 @@ export class StringReader {
     constructor(input: string | StringReader) {
         if (input instanceof StringReader) {
             this.string = input.string;
-            this.cursor = input.cursor;
+            this._cursor = input.cursor;
         } else {
             this._cursor = 0;
             this.string = input;
@@ -114,7 +114,7 @@ export class StringReader {
         }
         const readToTest: string = this.string.substr(start, read);
         if (readToTest.length === 0) {
-            throw StringReader.EXCEPTIONS.ExpectedInt.create(start, this);
+            throw StringReader.EXCEPTIONS.ExpectedInt.create(start, this.string.length);
         }
         try {
             return parseInt(readToTest, 10);
@@ -136,7 +136,7 @@ export class StringReader {
         }
         const readToTest: string = this.string.substr(start, read);
         if (readToTest.length === 0) {
-            throw StringReader.EXCEPTIONS.ExpectedDouble.create(start, this);
+            throw StringReader.EXCEPTIONS.ExpectedDouble.create(start, this.string.length);
         }
         try {
             return parseFloat(readToTest);
@@ -162,7 +162,7 @@ export class StringReader {
         if (!this.canRead()) {
             return "";
         } else if (this.peek() !== QUOTE) {
-            throw StringReader.EXCEPTIONS.ExpectedStartOfQuote.create(this.cursor, this);
+            throw StringReader.EXCEPTIONS.ExpectedStartOfQuote.create(this.cursor, this.string.length);
         }
         this.skip();
         let result: string = "";
@@ -204,7 +204,7 @@ export class StringReader {
         const start: number = this.cursor;
         const value: string = this.readString();
         if (value.length === 0) {
-            throw StringReader.EXCEPTIONS.ExpectedBool.create(this.cursor, this);
+            throw StringReader.EXCEPTIONS.ExpectedBool.create(this.cursor, this.string.length);
         }
         switch (value) {
             case "true":

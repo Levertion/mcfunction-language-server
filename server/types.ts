@@ -141,13 +141,9 @@ export class CommandSyntaxException {
         this.type = type;
         this.severity = severity || DiagnosticSeverity.Error;
     }
-    public create(start: number, end: number | StringReader, ...formatting: any[]): FunctionDiagnostic {
+    public create(start: number, end: number, ...formatting: any[]): FunctionDiagnostic {
         const diagnosis: FunctionDiagnostic = { severity: this.severity } as FunctionDiagnostic;
-        if (end instanceof StringReader) {
-            diagnosis.end = end.string.length;
-        } else {
-            diagnosis.end = end;
-        }
+        diagnosis.end = end;
         diagnosis.start = start;
         diagnosis.message = format(this.description, ...formatting);
         diagnosis.type = this.type;
