@@ -11,7 +11,8 @@
     },
     "scripts": {
         "compile:server": "tsc -p ./server/tsconfig.json",
-        "compile:client": "tsc -p ./client/tsconfig.json"
+        "compile:client": "tsc -p ./client/tsconfig.json",
+        "installServer": "installServerIntoExtension ../client ./package.json ./tsconfig.json"
     },
     "dependencies": {
         "vscode-languageserver": "^3.5.0",

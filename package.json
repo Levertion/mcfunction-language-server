@@ -18,12 +18,8 @@
         "url": "https://github.com/Levertion/mcfunction-language-server"
     },
     "scripts": {
-        "compile:server": "tsc -p ./server/tsconfig.json",
+        "compile:server": "cd server && npm run installServer && cd .. && tsc -p server/tsconfig.json",
         "compile:client": "tsc -p ./client/tsconfig.json",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
-    },
-    "dependencies": {
-        "@types/mocha": "^2.2.44",
-        "@types/shallowequal": "^0.2.1"
     }
 }

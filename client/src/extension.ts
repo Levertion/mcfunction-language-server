@@ -51,7 +51,7 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 
 export function activate(context: ExtensionContext) {
 
-    const module = context.asAbsolutePath(path.join("out", "server", "index.js"));
+    const module = context.asAbsolutePath(path.join("server", "index.js"));
     const outputChannel: OutputChannel = window.createOutputChannel("Minecraft Functions");
 
     function didOpenTextDocument(document: TextDocument): void {

@@ -1,7 +1,7 @@
 import { Interval, IntervalTree } from "node-interval-tree";
 import { format } from "util";
 import { Diagnostic, DiagnosticSeverity } from "vscode-languageserver/lib/main";
-import { StringReader } from "./brigadier-implementations";
+import { StringReader } from "./string-reader";
 
 /**
  * The full path to a node from the root.
