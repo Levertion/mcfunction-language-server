@@ -47,9 +47,10 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}/client/out/server/test/**/*.js"
+                "${workspaceFolder}/client/server/test/**/*.js"
             ],
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "Compile"
         }
     ]
 }

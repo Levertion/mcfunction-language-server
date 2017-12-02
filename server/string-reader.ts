@@ -49,7 +49,7 @@ export class StringReader {
      * The number of remaining characters until the end of the string.
      */
     public getRemainingLength(): number {
-        return this.string.length - this.cursor;
+        return this.string.length - 1 - this.cursor;
     }
     /**
      * Get the text in the string which has been passed/Already read
@@ -87,9 +87,7 @@ export class StringReader {
      * Move the cursor one space
      */
     public skip() {
-        if (this.canRead()) {
-            this.cursor++;
-        }
+        this.cursor++;
     }
     public skipWhitespace() {
         while (/^\s$/.test(this.peek())) {
