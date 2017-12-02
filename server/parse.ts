@@ -24,14 +24,18 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation, c
             } */
         }
     }
+    sendDiagnostics(serverInfo, connection, value.uri);
+}
+
+function sendDiagnostics(serverInfo: ServerInformation, connection: IConnection, uri: string) {
     const diagnostics: Diagnostic[] = [];
-    for (let i = 0; i < serverInfo.documentsInformation[value.uri].lines.length; i++) {
-        const diagnostic = serverInfo.documentsInformation[value.uri].lines[i];
+    for (let i = 0; i < serverInfo.documentsInformation[uri].lines.length; i++) {
+        const diagnostic = serverInfo.documentsInformation[uri].lines[i];
         if (diagnostic.issue) {
             diagnostics.push(toDiagnostic(diagnostic.issue, i));
         }
     }
-    connection.sendDiagnostics({ uri: value.uri, diagnostics });
+    connection.sendDiagnostics({ uri, diagnostics });
 }
 
 function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, serverInfo: ServerInformation): ParseResult {

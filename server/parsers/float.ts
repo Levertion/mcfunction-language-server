@@ -1,3 +1,4 @@
+import { isNumber } from "util";
 import { ARGUMENTSEPERATOR, JAVAMAXFLOAT, JAVAMINFLOAT } from "../consts";
 import { StringReader } from "../string-reader";
 import { CommandSyntaxException, NodeProperties, Parser } from "../types";
@@ -12,8 +13,8 @@ export const floatArgumentParser: Parser = {
         const start = reader.cursor;
         const read = reader.readFloat();
         // See https://stackoverflow.com/a/12957445
-        const max = Math.min(isNaN(properties.max) ? JAVAMAXFLOAT : properties.max, JAVAMAXFLOAT);
-        const min = Math.max(isNaN(properties.min) ? JAVAMINFLOAT : properties.min, JAVAMINFLOAT);
+        const max = Math.min(isNumber(properties.max) ? JAVAMAXFLOAT : properties.max, JAVAMAXFLOAT);
+        const min = Math.max(isNumber(properties.min) ? JAVAMINFLOAT : properties.min, JAVAMINFLOAT);
         if (reader.peek() === ARGUMENTSEPERATOR) {
             reader.cursor--;
         }
