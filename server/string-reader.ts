@@ -9,8 +9,8 @@ export class StringReader {
     private static EXCEPTIONS = {
         ExpectedInt: new CommandSyntaxException("An Integer was expected but null was found instead", "parsing.int.expected"),
         InvalidInt: new CommandSyntaxException("Invalid integer '%s'", "parsing.int.invalid"),
-        ExpectedDouble: new CommandSyntaxException("A double was expected but null was found instead", "parsing.double.expected"),
-        InvalidDouble: new CommandSyntaxException("Invalid double '%s'", "parsing.double.invalid"),
+        ExpectedFloat: new CommandSyntaxException("A float was expected but null was found instead", "parsing.float.expected"),
+        InvalidFloat: new CommandSyntaxException("Invalid float '%s'", "parsing.float.invalid"),
         ExpectedStartOfQuote: new CommandSyntaxException("Expected quote to start a string", "parsing.quote.expected.start"),
         ExpectedEndOfQuote: new CommandSyntaxException("Unclosed quoted string", "parsing.quote.expected.end"),
         InvalidEscape: new CommandSyntaxException("Invalid escape sequence '\\%s' in quoted string", "parsing.quote.escape"),
@@ -123,7 +123,7 @@ export class StringReader {
     /**
      * Read float from the string
      */
-    public readDouble(): number {
+    public readFloat(): number {
         const start: number = this.cursor;
         let read = 0;
         while (StringReader.isAllowedNumber(this.peek())) {
@@ -134,12 +134,12 @@ export class StringReader {
         }
         const readToTest: string = this.string.substr(start, read);
         if (readToTest.length === 0) {
-            throw StringReader.EXCEPTIONS.ExpectedDouble.create(start, this.string.length);
+            throw StringReader.EXCEPTIONS.ExpectedFloat.create(start, this.string.length);
         }
         try {
             return parseFloat(readToTest);
         } catch (error) {
-            throw StringReader.EXCEPTIONS.InvalidDouble.create(start, this.cursor, readToTest);
+            throw StringReader.EXCEPTIONS.InvalidFloat.create(start, this.cursor, readToTest);
         }
     }
     /**
@@ -147,8 +147,12 @@ export class StringReader {
      */
     public readUnquotedString(): string {
         const start: number = this.cursor;
-        while (this.canRead && StringReader.isAllowedInUnquotedString(this.peek())) {
-            this.skip();
+        while (StringReader.isAllowedInUnquotedString(this.peek())) {
+            if (this.canRead()) {
+                this.skip();
+            } else {
+                break;
+            }
         }
         return this.string.substring(start, this.cursor);
     }
@@ -165,8 +169,8 @@ export class StringReader {
         this.skip();
         let result: string = "";
         let escaped: boolean = false;
-        while (this.canRead()) {
-            const c: string = this.read();
+        while (true) {
+            const c: string = this.peek();
             if (escaped) {
                 if (c === QUOTE || c === STRINGESCAPE) {
                     result += c;
@@ -182,6 +186,11 @@ export class StringReader {
             } else {
                 result += c;
             }
+            if (this.canRead()) {
+                this.skip();
+            } else {
+                break;
+            }
         }
         throw StringReader.EXCEPTIONS.ExpectedEndOfQuote.create(start, this.string.length);
     }
@@ -190,7 +199,7 @@ export class StringReader {
      */
     public readString(): string {
         if (this.canRead() && this.peek() === QUOTE) {
-            return this.readString();
+            return this.readQuotedString();
         } else {
             return this.readUnquotedString();
         }
