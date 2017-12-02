@@ -6,10 +6,10 @@
     "devDependencies": {
         "@types/assert": "0.0.31",
         "@types/mocha": "^2.2.44",
-        "@types/node": "^8.0.50",
+        "@types/node": "^8.0.53",
         "mocha": "^4.0.1",
         "tslint": "^5.8.0",
-        "typescript": "^2.6.1"
+        "typescript": "^2.6.2"
     },
     "license": "MIT",
     "private": true,
