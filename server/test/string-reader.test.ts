@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import { StringReader } from "../string-reader";
-describe.only("string-reader", () => {
+describe("string-reader", () => {
     describe("constructor()", () => {
         describe("string input", () => {
             let reader: StringReader;
