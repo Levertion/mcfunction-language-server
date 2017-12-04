@@ -5,8 +5,7 @@
 import { QUOTE, STRINGESCAPE } from "./consts";
 import { CommandSyntaxException } from "./types";
 
-export class StringReader {
-    private static EXCEPTIONS = {
+const EXCEPTIONS = {
         ExpectedInt: new CommandSyntaxException("An Integer was expected but null was found instead", "parsing.int.expected"),
         InvalidInt: new CommandSyntaxException("Invalid integer '%s'", "parsing.int.invalid"),
         ExpectedFloat: new CommandSyntaxException("A float was expected but null was found instead", "parsing.float.expected"),
@@ -15,9 +14,10 @@ export class StringReader {
         ExpectedEndOfQuote: new CommandSyntaxException("Unclosed quoted string", "parsing.quote.expected.end"),
         InvalidEscape: new CommandSyntaxException("Invalid escape sequence '\\%s' in quoted string", "parsing.quote.escape"),
         ExpectedBool: new CommandSyntaxException("A boolean value was expected but null was found instead", "parsing.bool.expected"),
-        InvalidBool: new CommandSyntaxException("Invalid boolean '%s'", "parsing.bool.invalid"),
+    InvalidBool: new CommandSyntaxException("Invalid boolean, expected 'true' or 'false', got '%s'", "parsing.bool.invalid"),
         ExpectedSymbol: new CommandSyntaxException("Expected %s, got %s", "parsing.expected"),
     };
+export class StringReader {
     /**
      * Is the given number a valid number character.
      */
@@ -112,12 +112,12 @@ export class StringReader {
         }
         const readToTest: string = this.string.substr(start, read);
         if (readToTest.length === 0) {
-            throw StringReader.EXCEPTIONS.ExpectedInt.create(start, this.string.length);
+            throw EXCEPTIONS.ExpectedInt.create(start, this.string.length);
         }
         try {
             return parseInt(readToTest, 10);
         } catch (error) {
-            throw StringReader.EXCEPTIONS.InvalidInt.create(start, this.cursor, readToTest);
+            throw EXCEPTIONS.InvalidInt.create(start, this.cursor, readToTest);
         }
     }
     /**
@@ -134,12 +134,12 @@ export class StringReader {
         }
         const readToTest: string = this.string.substr(start, read);
         if (readToTest.length === 0) {
-            throw StringReader.EXCEPTIONS.ExpectedFloat.create(start, this.string.length);
+            throw EXCEPTIONS.ExpectedFloat.create(start, this.string.length);
         }
         try {
             return parseFloat(readToTest);
         } catch (error) {
-            throw StringReader.EXCEPTIONS.InvalidFloat.create(start, this.cursor, readToTest);
+            throw EXCEPTIONS.InvalidFloat.create(start, this.cursor, readToTest);
         }
     }
     /**
@@ -164,7 +164,7 @@ export class StringReader {
         if (!this.canRead()) {
             return "";
         } else if (this.peek() !== QUOTE) {
-            throw StringReader.EXCEPTIONS.ExpectedStartOfQuote.create(this.cursor, this.string.length);
+            throw EXCEPTIONS.ExpectedStartOfQuote.create(this.cursor, this.string.length);
         }
         this.skip();
         let result: string = "";
@@ -177,7 +177,7 @@ export class StringReader {
                     escaped = false;
                 } else {
                     this.cursor = this.cursor - 1;
-                    throw StringReader.EXCEPTIONS.InvalidEscape.create(this.cursor, this.string.length, c);
+                    throw EXCEPTIONS.InvalidEscape.create(this.cursor, this.string.length, c);
                 }
             } else if (c === STRINGESCAPE) {
                 escaped = true;
@@ -192,7 +192,7 @@ export class StringReader {
                 break;
             }
         }
-        throw StringReader.EXCEPTIONS.ExpectedEndOfQuote.create(start, this.string.length);
+        throw EXCEPTIONS.ExpectedEndOfQuote.create(start, this.string.length);
     }
     /**
      * Read a string from the string. If it surrounded by quotes, the quotes are ignored
@@ -211,7 +211,7 @@ export class StringReader {
         const start: number = this.cursor;
         const value: string = this.readString();
         if (value.length === 0) {
-            throw StringReader.EXCEPTIONS.ExpectedBool.create(this.cursor, this.string.length);
+            throw EXCEPTIONS.ExpectedBool.create(this.cursor, this.string.length);
         }
         switch (value) {
             case "true":
@@ -219,7 +219,7 @@ export class StringReader {
             case "false":
                 return false;
             default:
-                throw StringReader.EXCEPTIONS.InvalidBool.create(start, this.cursor, value);
+                throw EXCEPTIONS.InvalidBool.create(start, this.cursor, value);
         }
     }
     /**
