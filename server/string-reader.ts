@@ -243,4 +243,9 @@ export class StringReader {
             this._cursor = this.string.length - 1;
         }
     }
+    public readRemaining(): string {
+        const remaining = this.getRemaining();
+        this.cursor = this.string.length - 1;
+        return remaining;
+    }
 }
