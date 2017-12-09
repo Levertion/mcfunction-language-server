@@ -1,8 +1,16 @@
-import { Diagnostic, IConnection } from "vscode-languageserver/lib/main";
+import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { ARGUMENTSEPERATOR } from "./consts";
 import { literalArgumentParser } from "./parsers/literal";
 import { StringReader } from "./string-reader";
 import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation, toDiagnostic } from "./types";
+
+const PARSEEXCEPTIONS = {
+    NoChildren: new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless"),
+    MissingArgSep: new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace"),
+    IncompleteCommand: new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete"),
+    NoSuccesses: new CommandSyntaxException("No nodes which matched %s found", "command.parsing.matchless"),
+    UnexpectedSeperator: new CommandSyntaxException(`Unexpected trailing argument seperator ${ARGUMENTSEPERATOR}`, "command.parsing.trailing", DiagnosticSeverity.Warning),
+};
 
 // Exported only to allow assertion of a lines to parse in the "getDocumentLines" callback, which normally has an any type
 export interface LinesToParse {
@@ -57,6 +65,10 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                 case "literal":
                     try {
                         literalArgumentParser.parse(reader, childProperties);
+                        if (reader.peek() !== ARGUMENTSEPERATOR && reader.canRead()) {
+                            // This is to avoid repetition.
+                            throw {};
+                        }
                         successful = childKey;
                         issue = null;
                         nodes.push();
@@ -86,23 +98,25 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
     }
     if (!!successful) {
         if (reader.canRead()) {
-            if (!!node.children[successful].children) {
-                if (reader.peek(1) === ARGUMENTSEPERATOR) {
-                    reader.cursor += 2;
+            if (reader.peek() === ARGUMENTSEPERATOR) {
+                if (!!node.children[successful].children) {
+                    reader.skip();
                     const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
                     issue = parseResult.issue;
                     nodes.concat(parseResult.nodes);
                 } else {
-                    issue = new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace").create(reader.cursor, reader.string.length, reader.string.substring(reader.cursor));
+                    issue = PARSEEXCEPTIONS.NoChildren.create(reader.cursor + 1, reader.string.length, reader.getRemaining());
                 }
             } else {
-                issue = new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless").create(reader.cursor + 1, reader.string.length, reader.getRemaining());
+                issue = PARSEEXCEPTIONS.MissingArgSep.create(reader.cursor, reader.string.length, reader.string.substring(reader.cursor));
             }
         } else if (!node.children[successful].executable) {
-            issue = new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete").create(0, reader.string.length, reader.string);
+            issue = PARSEEXCEPTIONS.IncompleteCommand.create(0, reader.string.length, reader.string);
+        } else if (reader.peek() === ARGUMENTSEPERATOR) {
+            issue = PARSEEXCEPTIONS.UnexpectedSeperator.create(reader.cursor, reader.cursor);
         }
     } else if (!issue) {
-        issue = new CommandSyntaxException("No nodes which matched %s found", "command.parsing.matchless").create(begin, reader.string.length, reader.getRemaining());
+        issue = PARSEEXCEPTIONS.NoSuccesses.create(begin, reader.string.length, reader.getRemaining());
     }
     return { nodes, issue };
 }

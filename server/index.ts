@@ -30,7 +30,8 @@ const serverInfo: ServerInformation = {} as ServerInformation;
 connection.onInitialize((params) => {
     serverInfo.workspaceFolder = params.rootUri;
     serverInfo.documentsInformation = {};
-    serverInfo.logger = connection.console.log;
+    // Remove possibility of surplus connection
+    serverInfo.logger = (s) => connection.console.log(s);
     serverInfo.tree = {
         type: "root", children: {
             test: { type: "literal", executable: true },

@@ -1,32 +1,27 @@
-import { ARGUMENTSEPERATOR } from "../consts";
 import { StringReader } from "../string-reader";
 import { CommandSyntaxException, NodeProperties, Parser } from "../types";
 
 const LITERALEXCEPTIONS = {
     IncorrectLiteral: new CommandSyntaxException("Expected literal %s, got %s", "argument.literal.incorrect"),
-    MissingSpace: new CommandSyntaxException("Expected a space after literal, got %s", "argument.literal.missingspace"),
 };
 
 export const literalArgumentParser: Parser = {
     parse: (reader: StringReader, properties: NodeProperties) => {
         const begin = reader.cursor;
-        for (let i = 0; i < properties.key.length; i++) {
-            const char = properties.key[i];
-            if (reader.peek() === char) {
-                if (i === properties.key.length - 1) {
-                    break;
-                }
-                if (reader.canRead()) {
-                    reader.skip();
-                    continue;
-                }
+        let index = 0;
+        const key = properties.key;
+        reader.readWhileFunction((c: string) => {
+            if (index >= key.length) {
+                return false;
             }
-            // Otherwise, throw an error
-            throw LITERALEXCEPTIONS.IncorrectLiteral.create(begin, reader.cursor + 1, properties.key, reader.string.substring(begin, reader.cursor));
-        }
-        if (reader.canRead() && reader.peek(1) !== ARGUMENTSEPERATOR) {
-            throw LITERALEXCEPTIONS.MissingSpace.create(reader.cursor + 1, reader.string.length, reader.string.substring(reader.cursor + 1));
-        }
+            if (key[index] === c) {
+                index++;
+                return true;
+            } else {
+                // Cursor + 1 because the start and end are 0-indexed char seperators
+                throw LITERALEXCEPTIONS.IncorrectLiteral.create(begin, reader.cursor + 1, properties.key, reader.string.substring(begin));
+            }
+        });
     },
     getSuggestions: (start: string, properties: NodeProperties) => {
         if (properties.key.startsWith(start)) {

@@ -6,30 +6,18 @@ import { QUOTE, STRINGESCAPE } from "./consts";
 import { CommandSyntaxException } from "./types";
 
 const EXCEPTIONS = {
-        ExpectedInt: new CommandSyntaxException("An Integer was expected but null was found instead", "parsing.int.expected"),
-        InvalidInt: new CommandSyntaxException("Invalid integer '%s'", "parsing.int.invalid"),
-        ExpectedFloat: new CommandSyntaxException("A float was expected but null was found instead", "parsing.float.expected"),
-        InvalidFloat: new CommandSyntaxException("Invalid float '%s'", "parsing.float.invalid"),
-        ExpectedStartOfQuote: new CommandSyntaxException("Expected quote to start a string", "parsing.quote.expected.start"),
-        ExpectedEndOfQuote: new CommandSyntaxException("Unclosed quoted string", "parsing.quote.expected.end"),
-        InvalidEscape: new CommandSyntaxException("Invalid escape sequence '\\%s' in quoted string", "parsing.quote.escape"),
-        ExpectedBool: new CommandSyntaxException("A boolean value was expected but null was found instead", "parsing.bool.expected"),
+    ExpectedInt: new CommandSyntaxException("An Integer was expected but null was found instead", "parsing.int.expected"),
+    InvalidInt: new CommandSyntaxException("Invalid integer '%s'", "parsing.int.invalid"),
+    ExpectedFloat: new CommandSyntaxException("A float was expected but null was found instead", "parsing.float.expected"),
+    InvalidFloat: new CommandSyntaxException("Invalid float '%s'", "parsing.float.invalid"),
+    ExpectedStartOfQuote: new CommandSyntaxException("Expected quote to start a string", "parsing.quote.expected.start"),
+    ExpectedEndOfQuote: new CommandSyntaxException("Unclosed quoted string", "parsing.quote.expected.end"),
+    InvalidEscape: new CommandSyntaxException("Invalid escape sequence '\\%s' in quoted string", "parsing.quote.escape"),
+    ExpectedBool: new CommandSyntaxException("A boolean value was expected but null was found instead", "parsing.bool.expected"),
     InvalidBool: new CommandSyntaxException("Invalid boolean, expected 'true' or 'false', got '%s'", "parsing.bool.invalid"),
-        ExpectedSymbol: new CommandSyntaxException("Expected %s, got %s", "parsing.expected"),
-    };
+    ExpectedSymbol: new CommandSyntaxException("Expected %s, got %s", "parsing.expected"),
+};
 export class StringReader {
-    /**
-     * Is the given number a valid number character.
-     */
-    private static isAllowedNumber(c: string): boolean {
-        return /^[0-9\.-]$/.test(c);
-    }
-    /**
-     * Is the given character allowed in an unquoted string
-     */
-    private static isAllowedInUnquotedString(c: string) {
-        /^(?:[0-9]|[A-Z]|[a-z]|_|-|\.|\+)$/.test(c);
-    }
     public readonly string: string;
     private _cursor: number;
     /**
@@ -46,13 +34,14 @@ export class StringReader {
         }
     }
     /**
-     * The number of remaining characters until the end of the string.
+     * The number of remaining characters until the end of the string.  
+     * This is under the assumption that the character under the cursor has not been read.
      */
     public getRemainingLength(): number {
-        return this.string.length - 1 - this.cursor;
+        return this.string.length - this.cursor;
     }
     /**
-     * Get the text in the string which has been passed/Already read
+     * Get the text in the string which has been already read
      */
     public getRead(): string {
         return this.string.substring(0, this.cursor);
@@ -67,7 +56,7 @@ export class StringReader {
      * Is it safe to read?
      * @param length The number of characters. Can be omitted
      */
-    public canRead(length: number = 1) {
+    public canRead(length: number = 1): boolean {
         return this.cursor + length < this.string.length;
     }
     /**
@@ -89,33 +78,24 @@ export class StringReader {
     public skip() {
         this.cursor++;
     }
-    public skipWhitespace() {
-        while (/^\s$/.test(this.peek())) {
-            if (this.canRead()) {
-                this.skip();
-            } else { break; }
-        }
+    public skipWhitespace(): string {
+        return this.readWhileRegexp(/\s/);
     }
     /**
      * Read an integer from the string
      */
     public readInt(): number {
         const start: number = this.cursor;
-        let read = 0;
-        while (StringReader.isAllowedNumber(this.peek())) {
-            read++;
-            if (this.canRead()) {
-                this.skip();
-            } else {
-                break;
-            }
-        }
-        const readToTest: string = this.string.substr(start, read);
+        const readToTest: string = this.readWhileRegexp(/^[\-0-9\.]$/);
         if (readToTest.length === 0) {
             throw EXCEPTIONS.ExpectedInt.create(start, this.string.length);
         }
+        // The Java readInt crashes upon a `.`, but the regex includes on in brigadier
+        if (readToTest.indexOf(".") !== -1) {
+            throw EXCEPTIONS.InvalidInt.create(start, this.cursor, this.string.substring(start, this.cursor));
+        }
         try {
-            return parseInt(readToTest, 10);
+            return Number.parseInt(readToTest, 10);
         } catch (error) {
             throw EXCEPTIONS.InvalidInt.create(start, this.cursor, readToTest);
         }
@@ -125,14 +105,7 @@ export class StringReader {
      */
     public readFloat(): number {
         const start: number = this.cursor;
-        let read = 0;
-        while (StringReader.isAllowedNumber(this.peek())) {
-            read++;
-            if (this.canRead()) {
-                this.skip();
-            } else { break; }
-        }
-        const readToTest: string = this.string.substr(start, read);
+        const readToTest: string = this.readWhileRegexp(/^[\.\-0-9]$/);
         if (readToTest.length === 0) {
             throw EXCEPTIONS.ExpectedFloat.create(start, this.string.length);
         }
@@ -143,18 +116,11 @@ export class StringReader {
         }
     }
     /**
-     * Read a string from the string, which is not surrounded by quotes.
+     * The cursor ends on the first character after the string allowed characters  
+     * Result can have zero length, meaning no matches
      */
     public readUnquotedString(): string {
-        const start: number = this.cursor;
-        while (StringReader.isAllowedInUnquotedString(this.peek())) {
-            if (this.canRead()) {
-                this.skip();
-            } else {
-                break;
-            }
-        }
-        return this.string.substring(start, this.cursor);
+        return this.readWhileRegexp(/^[0-9A-Za-z_\-.+]$/);
     }
     /**
      * Read from the string, returning a string, which, in the original had been surrounded by quotes
@@ -163,13 +129,14 @@ export class StringReader {
         const start = this.cursor;
         if (!this.canRead()) {
             return "";
-        } else if (this.peek() !== QUOTE) {
+        }
+        if (this.peek() !== QUOTE) {
             throw EXCEPTIONS.ExpectedStartOfQuote.create(this.cursor, this.string.length);
         }
-        this.skip();
         let result: string = "";
         let escaped: boolean = false;
-        while (true) {
+        while (this.canRead()) {
+            this.skip();
             const c: string = this.peek();
             if (escaped) {
                 if (c === QUOTE || c === STRINGESCAPE) {
@@ -182,20 +149,16 @@ export class StringReader {
             } else if (c === STRINGESCAPE) {
                 escaped = true;
             } else if (c === QUOTE) {
-                return result.toString();
+                return result;
             } else {
                 result += c;
-            }
-            if (this.canRead()) {
-                this.skip();
-            } else {
-                break;
             }
         }
         throw EXCEPTIONS.ExpectedEndOfQuote.create(start, this.string.length);
     }
     /**
-     * Read a string from the string. If it surrounded by quotes, the quotes are ignored
+     * Read a string from the string. If it surrounded by quotes, the quotes are ignored.  
+     * The cursor ends on the last character in the string.
      */
     public readString(): string {
         if (this.canRead() && this.peek() === QUOTE) {
@@ -227,10 +190,43 @@ export class StringReader {
      * @param c The character which should come next
      */
     public expect(c: string) {
-        if (!this.canRead() || this.peek() !== c) {
-            throw StringReader.EXCEPTIONS.ExpectedSymbol.create(this.cursor, this.cursor, this.peek(), c);
+        if (this.peek() !== c) {
+            throw EXCEPTIONS.ExpectedSymbol.create(this.cursor, this.cursor, this.peek(), c);
         }
-        this.skip();
+        if (this.canRead()) {
+            this.skip();
+        }
+    }
+    /**
+     * Read while a certain function returns true on each consecutive character starting with the one under the cursor.  
+     * In most cases, it is better to use readWhileRegexp.  
+     * @param callback The function to use.
+     */
+    public readWhileFunction(callback: (char: string) => boolean): string {
+        const begin = this.cursor;
+        while (callback(this.peek())) {
+            if (this.canRead()) {
+                this.skip();
+            } else { return this.string.substring(begin); }
+        }
+        return this.string.substring(begin, this.cursor);
+    }
+    /**
+     * Read the string while a certain regular expression matches the character under the cursor.
+     * The cursor ends on the first character which doesn't match  
+     * @param exp The Regular Expression to test against
+     */
+    public readWhileRegexp(exp: RegExp): string {
+        return this.readWhileFunction((s) => exp.test(s));
+    }
+    /**
+     * Read the string until a certain regular expression matches the character under the cursor.  
+     * If no characters match an empty string is returned.  
+     * The cursor before the first match of exp
+     * @param exp The Regular expression to test against.
+     */
+    public readUntilRegexp(exp: RegExp) {
+        return this.readWhileFunction((s) => !exp.test(s));
     }
     public get cursor(): number {
         return this._cursor;
