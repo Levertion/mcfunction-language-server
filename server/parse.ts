@@ -1,5 +1,5 @@
 import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
-import { ARGUMENTSEPERATOR } from "./consts";
+import { ARGUMENTSEPERATOR, COMMENTSTART } from "./consts";
 import { literalArgumentParser } from "./parsers/literal";
 import { StringReader } from "./string-reader";
 import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation, toDiagnostic } from "./types";
@@ -23,7 +23,7 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation, c
         const text = value.lines[index];
         const lineNo = value.numbers[index];
         const info = serverInfo.documentsInformation[value.uri].lines[lineNo];
-        if (text.length > 0 && !text.startsWith("#")) {
+        if (text.length > 0 && !text.startsWith(COMMENTSTART)) {
             const reader = new StringReader(text);
             const result = parseChildren(serverInfo.tree, reader, [], serverInfo);
             info.issue = result.issue;
@@ -83,13 +83,16 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                     serverInfo.logger("Argument child reached");
                     if (!successful) {
                         try {
-
+                            // Will need to try the parser of child
+                            // It will log if the parser is not recognised, with an explanation messages
+                            // It will add a node to nodes with the path and key.
+                            // Possibly need a way for subparsers to send further nodes - worth looking into after first working draft.
                         } catch (error) {
                             reader.cursor = begin;
                             issue = error;
                         }
                     }
-                    continue child_loop;
+                    break;
                 default:
                     // Mangled input. Easiest to leave for the moment
                     break;

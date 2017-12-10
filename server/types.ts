@@ -71,7 +71,8 @@ export interface NodeRange extends Interval {
     key: string;
     /**
      * The path to the node in the command tree.
-     * TODO: Actually implement this.
+     * TODO: Actually implement this.  
+     * Used so that properties can be accessed
      */
     path?: string[];
 }

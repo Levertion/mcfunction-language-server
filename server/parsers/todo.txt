@@ -1,7 +1,3 @@
-brigadier:bool
-brigadier:float
-brigadier:integer
-brigadier:string
 minecraft:block
 minecraft:block_pos
 minecraft:color
