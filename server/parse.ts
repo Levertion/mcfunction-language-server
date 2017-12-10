@@ -86,7 +86,6 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                         break child_loop;
                     } catch (error) {
                         reader.cursor = begin;
-                        serverInfo.logger(`${JSON.stringify(error)}`);
                     }
                     break;
                 case "argument":

@@ -99,7 +99,11 @@ connection.onHover((params) => {
         const lineInfo = serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line];
         const matching = lineInfo.Nodes.search(params.position.character, params.position.character);
         if (matching.length > 0) {
-            return { contents: matching.map<string>((node) => `${node.key} on path '${node.path.join()}'`) };
+            return {
+                contents: matching.map<string>((node) => `${node.key} on path '${node.path.join()}'`), range: {
+                    start: { line: params.position.line, character: matching[0].low }, end: { line: params.position.line, character: matching[0].high },
+                },
+            };
         } else {
             return { contents: "" };
         }
