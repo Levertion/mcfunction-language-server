@@ -36,6 +36,16 @@ connection.onInitialize((params) => {
         type: "root", children: {
             test: { type: "literal", executable: true },
             test2: { type: "literal", children: { testChild: { type: "literal", executable: true } } },
+            argtest: {
+                type: "literal", children: {
+                    float: { type: "argument", parser: "brigadier:float", executable: true, properties: { min: 100 } },
+                    int: { type: "argument", parser: "brigadier:integer", executable: true, properties: { min: -10 } },
+                    bool: { type: "argument", parser: "brigadier:bool", executable: true },
+                    greedy: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "greedy" } },
+                    word: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "word" } },
+                    phrase: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "phrase" } },
+                },
+            },
         },
     };
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);
@@ -45,6 +55,7 @@ connection.onInitialize((params) => {
                 openClose: true,
                 change: TextDocumentSyncKind.Incremental,
             },
+            hoverProvider: true,
         },
     };
 });
@@ -81,4 +92,18 @@ connection.onDidOpenTextDocument((params) => {
 connection.onDidCloseTextDocument((params) => {
     connection.console.log("Document Closed");
     delete serverInfo.documentsInformation[params.textDocument.uri];
+});
+
+connection.onHover((params) => {
+    if (!!serverInfo.documentsInformation[params.textDocument.uri]) {
+        const lineInfo = serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line];
+        const matching = lineInfo.Nodes.search(params.position.character, params.position.character);
+        if (matching.length > 0) {
+            return { contents: matching.map<string>((node) => `${node.key} on path '${node.path.join()}'`) };
+        } else {
+            return { contents: "" };
+        }
+    } else {
+        return { contents: "" };
+    }
 });

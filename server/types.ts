@@ -27,7 +27,7 @@ export interface CommandNode {
     /**
      * The properties of a node for the parser to use.
      */
-    properties?: NodeProperties;
+    properties?: GivenProperties;
     /**
      * Whether the command could be run from this point
      */
@@ -43,9 +43,15 @@ export interface CommandNode {
     children?: { [key: string]: CommandNode };
 }
 /**
+ * Further Properties of the node.  
+ */
+export interface GivenProperties {
+    [additionals: string]: any;
+}
+/**
  * The properties of a node for the parser to use
  */
-export interface NodeProperties {
+export interface NodeProperties extends GivenProperties {
     /**
      * The key this node was called with.  
      * This should be added by the interpreter and is not included by default.
@@ -55,10 +61,6 @@ export interface NodeProperties {
      * The full path to this node.  
      */
     path: NodePath;
-    /**
-     * Further Properties of the node.  
-     */
-    [additionals: string]: any;
 }
 
 /**
@@ -144,7 +146,7 @@ export class CommandSyntaxException {
     }
     public create(start: number, end: number, ...formatting: any[]): FunctionDiagnostic {
         const diagnosis: FunctionDiagnostic = { severity: this.severity } as FunctionDiagnostic;
-        diagnosis.end = end;
+        diagnosis.end = end + 1;
         diagnosis.start = start;
         diagnosis.message = format(this.description, ...formatting);
         diagnosis.type = this.type;
