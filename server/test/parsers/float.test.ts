@@ -5,16 +5,12 @@ import { FunctionDiagnostic, NodeProperties } from "../../types";
 
 describe("Float Argument Parser", () => {
     describe("parse()", () => {
-        function validFloatTests(s: string, expectedNum: number) {
-            const numEnd = Math.min(s.indexOf(" ") !== -1 ? s.indexOf(" ") : s.length - 1, s.length - 1);
+        function validFloatTests(s: string, expectedNum: number, numEnd: number) {
             describe("no constraints", () => {
                 const reader = new StringReader(s);
                 const properties: NodeProperties = { key: "test", path: [] };
                 it("should not throw an error", () => {
                     assert.doesNotThrow(() => floatArgumentParser.parse(reader, properties));
-                });
-                it("should set the cursor to the last character", () => {
-                    assert.equal(reader.cursor, numEnd);
                 });
             });
             describe("less than min", () => {
@@ -53,16 +49,16 @@ describe("Float Argument Parser", () => {
             });
         }
         describe("valid integer", () => {
-            validFloatTests("1234", 1234);
+            validFloatTests("1234", 1234, 4);
         });
         describe("valid integer with space", () => {
-            validFloatTests("1234 ", 1234);
+            validFloatTests("1234 ", 1234, 4);
         });
         describe("valid float with `.`", () => {
-            validFloatTests("1234.5678", 1234.5678);
+            validFloatTests("1234.5678", 1234.5678, 9);
         });
         describe("valid float with `.` and space", () => {
-            validFloatTests("1234.5678 ", 1234.5678);
+            validFloatTests("1234.5678 ", 1234.5678, 9);
         });
         describe("java max value testing ", () => {
             const reader = new StringReader("1000000000000000");

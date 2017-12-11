@@ -5,16 +5,12 @@ import { FunctionDiagnostic, NodeProperties } from "../../types";
 
 describe("Integer Argument Parser", () => {
     describe("parse", () => {
-        function validIntTests(s: string, expectedNum: number) {
-            const intEnd = Math.min(s.indexOf(" ") !== -1 ? s.indexOf(" ") : s.length - 1, s.length - 1);
+        function validIntTests(s: string, expectedNum: number, numEnd: number) {
             describe("no constraints", () => {
                 const reader = new StringReader(s);
                 const properties: NodeProperties = { key: "test", path: [] };
                 it("should not throw an error", () => {
                     assert.doesNotThrow(() => integerArgumentParser.parse(reader, properties));
-                });
-                it("should set the cursor to the last character", () => {
-                    assert.equal(reader.cursor, intEnd);
                 });
             });
             describe("less than min", () => {
@@ -31,7 +27,7 @@ describe("Integer Argument Parser", () => {
                     assert.equal(e.start, 0);
                 });
                 it("should end the error at the end of the integer", () => {
-                    assert.equal(e.end, intEnd);
+                    assert.equal(e.end, numEnd);
                 });
             });
             describe("more than max", () => {
@@ -48,15 +44,15 @@ describe("Integer Argument Parser", () => {
                     assert.equal(e.start, 0);
                 });
                 it("should end the error at the end of the integer", () => {
-                    assert.equal(e.end, intEnd);
+                    assert.equal(e.end, numEnd);
                 });
             });
         }
         describe("valid integer", () => {
-            validIntTests("1234", 1234);
+            validIntTests("1234", 1234, 4);
         });
         describe("valid integer with space", () => {
-            validIntTests("1234 ", 1234);
+            validIntTests("1234 ", 1234, 4);
         });
         describe("java max value testing ", () => {
             const reader = new StringReader("1000000000000000");

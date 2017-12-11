@@ -77,6 +77,10 @@ export interface NodeRange extends Interval {
      * Used so that properties can be accessed
      */
     path?: string[];
+    /**
+     * Information stored about this node in the parsing pass
+     */
+    parseInfo?: ParseInfo;
 }
 
 /**
@@ -107,7 +111,8 @@ export interface DocumentInformation {
 }
 export interface DocLine {
     issue?: FunctionDiagnostic;
-    Nodes: IntervalTree<NodeRange>;
+    nodes: NodeRange[];
+    tree?: IntervalTree<NodeRange>;
 }
 
 export interface FunctionDiagnostic {
@@ -125,8 +130,12 @@ export function toDiagnostic(diagnosis: FunctionDiagnostic, line: number): Diagn
     }, diagnosis.message, diagnosis.severity, diagnosis.type, "mcfunction");
 }
 
+export interface ParseInfo {
+    additionalInfo?: { [key: string]: any };
+}
+
 export interface Parser {
-    parse: (reader: StringReader, properties: NodeProperties, serverInfo?: ServerInformation) => void;
+    parse: (reader: StringReader, properties: NodeProperties, serverInfo?: ServerInformation) => void | ParseInfo;
     getSuggestions: (text: string, properties: NodeProperties, serverInfo?: ServerInformation) => string[];
 }
 
@@ -146,7 +155,7 @@ export class CommandSyntaxException {
     }
     public create(start: number, end: number, ...formatting: any[]): FunctionDiagnostic {
         const diagnosis: FunctionDiagnostic = { severity: this.severity } as FunctionDiagnostic;
-        diagnosis.end = end + 1;
+        diagnosis.end = end;
         diagnosis.start = start;
         diagnosis.message = format(this.description, ...formatting);
         diagnosis.type = this.type;

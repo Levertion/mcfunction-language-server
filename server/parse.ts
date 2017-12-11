@@ -11,9 +11,9 @@ import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, Node
 const PARSEEXCEPTIONS = {
     NoChildren: new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless"),
     MissingArgSep: new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace"),
-    IncompleteCommand: new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete"),
+    IncompleteCommand: new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete", DiagnosticSeverity.Warning),
     NoSuccesses: new CommandSyntaxException("No nodes which matched %s found", "command.parsing.matchless"),
-    UnexpectedSeperator: new CommandSyntaxException(`Unexpected trailing argument seperator ${ARGUMENTSEPERATOR}`, "command.parsing.trailing", DiagnosticSeverity.Warning),
+    UnexpectedSeperator: new CommandSyntaxException(`Unexpected trailing argument seperator '${ARGUMENTSEPERATOR}'`, "command.parsing.trailing", DiagnosticSeverity.Warning),
 };
 
 const parsers: { [key: string]: Parser } = {
@@ -38,9 +38,7 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation, c
             const reader = new StringReader(text);
             const result = parseChildren(serverInfo.tree, reader, [], serverInfo);
             info.issue = result.issue;
-            for (const node of result.nodes) {
-                info.Nodes.insert(node);
-            }
+            info.nodes.push(...result.nodes);
         }
     }
     sendDiagnostics(serverInfo, connection, value.uri);
@@ -60,7 +58,7 @@ function sendDiagnostics(serverInfo: ServerInformation, connection: IConnection,
 function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, serverInfo: ServerInformation): ParseResult {
     const begin = reader.cursor;
     const nodes: NodeRange[] = [];
-    let successful: string;
+    let successful: NodeRange;
     let newPath: NodePath;
     let issue: FunctionDiagnostic;
     child_loop:
@@ -74,18 +72,19 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
             childProperties.path = newPath;
             switch (child.type) {
                 case "literal":
+                    const beforeParse = reader.cursor;
+                    reader.cursor = begin;
                     try {
                         literalArgumentParser.parse(reader, childProperties);
-                        if (reader.peek() !== ARGUMENTSEPERATOR && reader.canRead()) {
+                        if (reader.peek() !== ARGUMENTSEPERATOR && !reader.endRead) {
                             // This is to avoid repetition.
                             throw {};
                         }
-                        successful = childKey;
+                        successful = { key: childKey, high: reader.cursor, path: newPath, low: begin };
                         issue = null;
-                        nodes.push({ key: childKey, high: reader.cursor, path: newPath, low: begin });
                         break child_loop;
                     } catch (error) {
-                        reader.cursor = begin;
+                        reader.cursor = beforeParse;
                     }
                     break;
                 case "argument":
@@ -98,10 +97,20 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                             // Possibly need a way for subparsers to send further nodes - worth looking into after first working draft.
                             if (parsers.hasOwnProperty(child.parser)) {
                                 const parser = parsers[child.parser];
-                                parser.parse(reader, childProperties, serverInfo);
-                                issue = null;
-                                successful = childKey;
-                                nodes.push({ key: childKey, high: reader.cursor, path: newPath, low: begin });
+                                const result = parser.parse(reader, childProperties, serverInfo);
+                                if (reader.peek() === ARGUMENTSEPERATOR || reader.endRead) {
+                                    issue = null;
+                                    if (reader.endRead) {
+                                        successful = { key: childKey, high: reader.cursor + 1, path: newPath, low: begin };
+                                    } else {
+                                        successful = { key: childKey, high: reader.cursor, path: newPath, low: begin };
+                                    }
+                                    if (!!result) {
+                                        successful.parseInfo = result;
+                                    }
+                                } else {
+                                    throw PARSEEXCEPTIONS.MissingArgSep.create(reader.cursor, reader.string.length, reader.string.substring(reader.cursor));
+                                }
                             }
                         } catch (error) {
                             reader.cursor = begin;
@@ -115,27 +124,28 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
             }
         }
     }
-    if (!!successful) {
+    if (!!successful && !issue) {
         if (reader.canRead()) {
-            if (reader.peek() === ARGUMENTSEPERATOR) {
-                if (!!node.children[successful].children) {
-                    reader.skip();
-                    const parseResult = parseChildren(node.children[successful], reader, newPath, serverInfo);
+            if (!!node.children[successful.key].children) {
+                reader.skip();
+                if (!reader.endRead) {
+                    const parseResult = parseChildren(node.children[successful.key], reader, newPath, serverInfo);
                     issue = parseResult.issue;
                     nodes.push(...parseResult.nodes);
-                } else {
-                    issue = PARSEEXCEPTIONS.NoChildren.create(reader.cursor + 1, reader.string.length, reader.getRemaining());
                 }
             } else {
-                issue = PARSEEXCEPTIONS.MissingArgSep.create(reader.cursor, reader.string.length, reader.string.substring(reader.cursor));
+                issue = PARSEEXCEPTIONS.NoChildren.create(reader.cursor, reader.string.length, reader.getRemaining());
             }
-        } else if (!node.children[successful].executable) {
+        } else if (!node.children[successful.key].executable) {
             issue = PARSEEXCEPTIONS.IncompleteCommand.create(0, reader.string.length, reader.string);
         } else if (reader.peek() === ARGUMENTSEPERATOR) {
-            issue = PARSEEXCEPTIONS.UnexpectedSeperator.create(reader.cursor, reader.cursor);
+            issue = PARSEEXCEPTIONS.UnexpectedSeperator.create(reader.cursor, reader.cursor + 1);
         }
     } else if (!issue) {
         issue = PARSEEXCEPTIONS.NoSuccesses.create(begin, reader.string.length, reader.getRemaining());
+    }
+    if (!!successful) {
+        nodes.push(successful);
     }
     return { nodes, issue };
 }

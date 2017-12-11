@@ -40,11 +40,29 @@ connection.onInitialize((params) => {
                 type: "literal", children: {
                     float: { type: "argument", parser: "brigadier:float", executable: true, properties: { min: 100 } },
                     int: { type: "argument", parser: "brigadier:integer", executable: true, properties: { min: -10 } },
-                    bool: { type: "argument", parser: "brigadier:bool", executable: true },
-                    greedy: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "greedy" } },
-                    word: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "word" } },
-                    phrase: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "phrase" } },
+                    bool: {
+                        type: "literal", children: {
+                            string: { type: "argument", parser: "brigadier:bool", executable: true },
+                        },
+                    },
+                    greedy: {
+                        type: "literal", children: {
+                            string: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "greedy" } },
+                        },
+                    },
+                    word: {
+                        type: "literal", children: {
+                            string: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "word" } },
+                        },
+                    },
+                    phrase: {
+                        type: "literal", children: {
+                            string: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "phrase" } },
+                        },
+                    },
                 },
+                word: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "word" } },
+                phrase: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "phrase" } },
             },
         },
     };
@@ -75,7 +93,7 @@ connection.onDidChangeTextDocument((event) => {
         const result = getChangedLines(change);
         changedLines.push(...result.tracker);
         // Remove the changed lines, and then refill the new needed ones with empty trees.
-        serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.changedNumber, ...Array(result.tracker.length).fill(0).map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })));
+        serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.changedNumber, ...Array(result.tracker.length).fill(0).map<DocLine>(() => ({ nodes: [] })));
     }
     // See https://stackoverflow.com/a/14438954. From discussion seems like this is the easiest way.
     changedLines.filter((value, index, self) => self.indexOf(value) === index);
@@ -85,7 +103,7 @@ connection.onDidChangeTextDocument((event) => {
 connection.onDidOpenTextDocument((params) => {
     connection.console.log("Document Opened");
     const lines = params.textDocument.text.split(/\r?\n/g);
-    serverInfo.documentsInformation[params.textDocument.uri] = { lines: new Array(lines.length).fill("U").map<DocLine>(() => ({ Nodes: new IntervalTree<NodeRange>() })) };
+    serverInfo.documentsInformation[params.textDocument.uri] = { lines: new Array(lines.length).fill("U").map<DocLine>(() => ({ nodes: [] })) };
     parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo, connection);
 });
 
@@ -97,7 +115,11 @@ connection.onDidCloseTextDocument((params) => {
 connection.onHover((params) => {
     if (!!serverInfo.documentsInformation[params.textDocument.uri]) {
         const lineInfo = serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line];
-        const matching = lineInfo.Nodes.search(params.position.character, params.position.character);
+        const tree = new IntervalTree<NodeRange>();
+        for (const node of lineInfo.nodes) {
+            tree.insert(node);
+        }
+        const matching = tree.search(params.position.character, params.position.character);
         if (matching.length > 0) {
             return {
                 contents: matching.map<string>((node) => `${node.key} on path '${node.path.join()}'`), range: {
