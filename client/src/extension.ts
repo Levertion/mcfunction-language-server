@@ -123,12 +123,21 @@ export function activate(context: ExtensionContext) {
     });
 }
 
-function clientSetup(client) {
+function clientSetup(client: LanguageClient) {
     client.onRequest("getDocumentLines", (textDocument: VersionedTextDocumentIdentifier, changedLines: number[]) => {
         for (const doc of workspace.textDocuments) {
             if (textDocument.uri === doc.uri.toString()) {
                 if (doc.version === doc.version) {
-                    return { lines: changedLines.map<string>((lineNo) => doc.lineAt(lineNo).text), numbers: changedLines, uri: textDocument.uri };
+                    const newlines: string[] = [];
+                    for (const change of changedLines) {
+                        try {
+                            newlines.push(doc.lineAt(change).text);
+                        } catch (e) {
+                            changedLines.splice(changedLines.indexOf(change));
+                            client.error(JSON.stringify(e));
+                        }
+                    }
+                    return { lines: newlines, numbers: changedLines, uri: textDocument.uri };
                 } else {
                     return null;
                 }

@@ -91,6 +91,13 @@ connection.onDidChangeTextDocument((event) => {
     const changedLines: number[] = [];
     for (const change of event.contentChanges) {
         const result = getChangedLines(change);
+        // Map is not suitable here as it creates a copy without editing the original.
+        // This is needed to fix.
+        changedLines.forEach((v, i) => {
+            if (v > result.newLine) {
+                changedLines[i] = v + result.movedBy;
+            }
+        });
         changedLines.push(...result.tracker);
         // Remove the changed lines, and then refill the new needed ones with empty trees.
         serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.changedNumber, ...Array(result.tracker.length).fill(0).map<DocLine>(() => ({ nodes: [] })));
