@@ -21,7 +21,8 @@
     "scripts": {
         "compile:server": "tsc -p ./server/tsconfig.json",
         "compile:client": "tsc -p ./client/tsconfig.json",
-        "postinstall": "node ./node_modules/vscode/bin/install"
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "package": "vsce package"
     },
     "contributes": {
         "languages": [
