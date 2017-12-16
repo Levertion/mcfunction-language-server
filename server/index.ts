@@ -14,8 +14,7 @@ import {
 } from "vscode-languageserver";
 import { LinesToParse, parseLines } from "./parse";
 import { getChangedLines } from "./server-information";
-import { DocLine, NodeRange, ServerInformation } from "./types";
-
+import { calculateDataFolder, DocLine, NodeRange, ServerInformation } from "./types";
 // Creates the LSP connection
 const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 
@@ -28,7 +27,9 @@ connection.listen();
 const serverInfo: ServerInformation = {} as ServerInformation;
 // Setup the server.
 connection.onInitialize((params) => {
-    serverInfo.workspaceFolder = params.rootUri;
+    if (!!params.rootUri) {
+        serverInfo.workspaceFolder = params.rootUri;
+    }
     serverInfo.documentsInformation = {};
     // Remove possibility of surplus connection
     serverInfo.logger = (s) => connection.console.log(s);
@@ -110,7 +111,10 @@ connection.onDidChangeTextDocument((event) => {
 connection.onDidOpenTextDocument((params) => {
     connection.console.log("Document Opened");
     const lines = params.textDocument.text.split(/\r?\n/g);
-    serverInfo.documentsInformation[params.textDocument.uri] = { lines: new Array(lines.length).fill("U").map<DocLine>(() => ({ nodes: [] })) };
+    serverInfo.documentsInformation[params.textDocument.uri] = {
+        lines: new Array(lines.length).fill("").map<DocLine>(() => ({ nodes: [] })),
+        packFolderURI: calculateDataFolder(params.textDocument.uri, serverInfo.workspaceFolder),
+    };
     parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo, connection);
 });
 
