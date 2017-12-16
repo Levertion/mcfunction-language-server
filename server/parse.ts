@@ -1,3 +1,4 @@
+import isEqual = require("lodash.isequal");
 import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { ARGUMENTSEPERATOR, COMMENTSTART } from "./consts";
 import { boolArgumentParser } from "./parsers/bool";
@@ -104,7 +105,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                                 parser.parse(reader, childProperties, newContext);
                                 if (reader.peek() === ARGUMENTSEPERATOR || reader.endRead) {
                                     issue = null;
-                                    if (newContext !== oldContext) {
+                                    if (isEqual(newContext, oldContext)) {
                                         context = newContext;
                                     }
                                     if (reader.endRead) {
