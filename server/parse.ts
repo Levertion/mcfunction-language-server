@@ -6,7 +6,7 @@ import { integerArgumentParser } from "./parsers/integer";
 import { literalArgumentParser } from "./parsers/literal";
 import { stringArgumentParser } from "./parsers/string";
 import { StringReader } from "./string-reader";
-import { CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, Parser, ParseResult, ServerInformation, toDiagnostic } from "./types";
+import { CommandContext, CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, Parser, ParseResult, ServerInformation, toDiagnostic } from "./types";
 
 const PARSEEXCEPTIONS = {
     NoChildren: new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless"),
@@ -35,8 +35,9 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation, c
         const lineNo = value.numbers[index];
         const info = serverInfo.documentsInformation[value.uri].lines[lineNo];
         if (text.length > 0 && !text.startsWith(COMMENTSTART)) {
+            const context: CommandContext = { executortype: "any", fileUri: value.uri, server: serverInfo };
             const reader = new StringReader(text);
-            const result = parseChildren(serverInfo.tree, reader, [], serverInfo);
+            const result = parseChildren(serverInfo.tree, reader, [], context);
             info.issue = result.issue;
             info.nodes.push(...result.nodes);
         }
@@ -55,7 +56,7 @@ function sendDiagnostics(serverInfo: ServerInformation, connection: IConnection,
     connection.sendDiagnostics({ uri, diagnostics });
 }
 
-function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, serverInfo: ServerInformation): ParseResult {
+function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, context: CommandContext): ParseResult {
     const begin = reader.cursor;
     const nodes: NodeRange[] = [];
     let successful: NodeRange;
@@ -88,8 +89,11 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                     }
                     break;
                 case "argument":
-                    serverInfo.logger(`Argument Child ${childKey}`);
+                    context.server.logger(`Argument Child ${childKey}`);
                     if (!successful) {
+                        const oldContext = context;
+                        // Deep clone.
+                        const newContext = JSON.parse(JSON.stringify(context));
                         try {
                             // Will need to try the parser of child
                             // It will log if the parser is not recognised, with an explanation messages
@@ -97,16 +101,16 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                             // Possibly need a way for subparsers to send further nodes - worth looking into after first working draft.
                             if (parsers.hasOwnProperty(child.parser)) {
                                 const parser = parsers[child.parser];
-                                const result = parser.parse(reader, childProperties, serverInfo);
+                                parser.parse(reader, childProperties, newContext);
                                 if (reader.peek() === ARGUMENTSEPERATOR || reader.endRead) {
                                     issue = null;
-                                    if (reader.endRead) {
-                                        successful = { key: childKey, high: reader.cursor + 1, path: newPath, low: begin };
-                                    } else {
-                                        successful = { key: childKey, high: reader.cursor, path: newPath, low: begin };
+                                    if (newContext !== oldContext) {
+                                        context = newContext;
                                     }
-                                    if (!!result) {
-                                        successful.parseInfo = result;
+                                    if (reader.endRead) {
+                                        successful = { key: childKey, high: reader.cursor + 1, path: newPath, low: begin, context };
+                                    } else {
+                                        successful = { key: childKey, high: reader.cursor, path: newPath, low: begin, context };
                                     }
                                 } else {
                                     throw PARSEEXCEPTIONS.MissingArgSep.create(reader.cursor, reader.string.length, reader.string.substring(reader.cursor));
@@ -129,7 +133,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
             if (!!node.children[successful.key].children) {
                 reader.skip();
                 if (!reader.endRead) {
-                    const parseResult = parseChildren(node.children[successful.key], reader, newPath, serverInfo);
+                    const parseResult = parseChildren(node.children[successful.key], reader, newPath, context);
                     issue = parseResult.issue;
                     nodes.push(...parseResult.nodes);
                 }

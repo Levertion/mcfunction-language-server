@@ -80,9 +80,10 @@ export interface NodeRange extends Interval {
      */
     path?: string[];
     /**
-     * Information stored about this node in the parsing pass
+     * The context of this node.  
+     * A new copy is created whenever
      */
-    parseInfo?: ParseInfo;
+    context?: CommandContext;
 }
 
 /**
@@ -133,13 +134,23 @@ export function toDiagnostic(diagnosis: FunctionDiagnostic, line: number): Diagn
     }, diagnosis.message, diagnosis.severity, diagnosis.type, "mcfunction");
 }
 
-export interface ParseInfo {
-    additionalInfo?: { [key: string]: any };
+export interface CommandContext {
+    server: ServerInformation;
+    executortype: "any" | "player" | "noplayer";
+    executionTypes?: string[];
+    fileUri: string;
 }
 
 export interface Parser {
-    parse: (reader: StringReader, properties: NodeProperties, serverInfo?: ServerInformation) => void | ParseInfo;
-    getSuggestions: (text: string, properties: NodeProperties, serverInfo?: ServerInformation) => string[];
+    /**
+     * Parse the argument as described in NodeProperties against this parser in the reader.  
+     * The context is optional for the literal and for tests
+     */
+    parse: (reader: StringReader, properties: NodeProperties, context?: CommandContext) => void;
+    /**
+     * List the suggestions at the end of the starting text described in `text`.
+     */
+    getSuggestions: (text: string, properties: NodeProperties, context?: CommandContext) => string[];
 }
 
 export interface ParseResult {
