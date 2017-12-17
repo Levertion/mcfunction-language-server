@@ -4,8 +4,8 @@ import { StringReader } from "../../string-reader";
 import { FunctionDiagnostic, NodeProperties } from "../../types";
 
 describe("literalArgumentParser", () => {
+    const properties: NodeProperties = { key: "test", path: [] };
     describe("parse()", () => {
-        const properties: NodeProperties = { key: "test", path: [] };
         describe("literal correct", () => {
             it("should not throw an error", () => {
                 const reader = new StringReader("test");
@@ -14,7 +14,7 @@ describe("literalArgumentParser", () => {
             it("should set the cursor to end of the string when the literal goes to the end of the string", () => {
                 const reader = new StringReader("test");
                 literalArgumentParser.parse(reader, properties);
-                assert.equal(reader.cursor, 3);
+                assert.equal(reader.cursor, 4);
             });
             it("should set the cursor to after the string when it doesn't reach the end", () => {
                 const reader = new StringReader("test ");
@@ -39,6 +39,16 @@ describe("literalArgumentParser", () => {
                     return true;
                 });
             });
+        });
+    });
+    describe("getSuggestions()", () => {
+        it("should return the literal if it is given a valid start", () => {
+            assert.deepEqual(literalArgumentParser.getSuggestions("tes", properties), ["test"]);
+            assert.deepEqual(literalArgumentParser.getSuggestions("test", properties), ["test"]);
+        });
+        it("should give nothing if there is an invalid start", () => {
+            assert.deepEqual(literalArgumentParser.getSuggestions("hello", properties), []);
+            assert.deepEqual(literalArgumentParser.getSuggestions("nottest", properties), []);
         });
     });
 });

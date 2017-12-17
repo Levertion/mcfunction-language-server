@@ -70,7 +70,7 @@ export function activate(context: ExtensionContext) {
             };
             const clientOptions: LanguageClientOptions = {
                 documentSelector: [
-                    { scheme: "untitled", language: "plaintext" },
+                    { scheme: "untitled", language: "mcfunction" },
                 ],
                 diagnosticCollectionName: "mcfunction-lsp",
                 outputChannel,
@@ -81,7 +81,7 @@ export function activate(context: ExtensionContext) {
             return;
         }
         let folder = workspace.getWorkspaceFolder(uri);
-        // Files outside a folder can't be handled. This might depend on the language.
+        // Files outside a folder can't be handled easily. This might depend on the language.
         // Single file languages like JSON might handle files outside the workspace folders.
         if (!folder) {
             return;

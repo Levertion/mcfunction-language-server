@@ -1,6 +1,8 @@
 import { Interval, IntervalTree } from "node-interval-tree";
+import * as path from "path";
 import { format } from "util";
 import { Diagnostic, DiagnosticSeverity } from "vscode-languageserver/lib/main";
+import { dataFolderName } from "./consts";
 import { StringReader } from "./string-reader";
 
 /**
@@ -78,9 +80,10 @@ export interface NodeRange extends Interval {
      */
     path?: string[];
     /**
-     * Information stored about this node in the parsing pass
+     * The context of this node.  
+     * A new copy is created whenever
      */
-    parseInfo?: ParseInfo;
+    context?: CommandContext;
 }
 
 /**
@@ -108,6 +111,7 @@ export interface ServerInformation {
 
 export interface DocumentInformation {
     lines: DocLine[];
+    packFolderURI: string;
 }
 export interface DocLine {
     issue?: FunctionDiagnostic;
@@ -130,13 +134,39 @@ export function toDiagnostic(diagnosis: FunctionDiagnostic, line: number): Diagn
     }, diagnosis.message, diagnosis.severity, diagnosis.type, "mcfunction");
 }
 
-export interface ParseInfo {
-    additionalInfo?: { [key: string]: any };
+export interface CommandContext {
+    server: ServerInformation;
+    executortype: "any" | "player" | "noplayer";
+    executionTypes?: string[];
+    fileUri: string;
 }
 
+export interface Suggestion {
+    /**
+     * The string to suggest.
+     */
+    value: string;
+    /**
+     * The start from where value should be replaced. 0 indexed character gaps.
+     * E.g. `@e[na` with the suggestion `{value:"name=",start:3}` 
+     * would make `@e[name=` when accepted.
+     */
+    start: number;
+}
+
+export type SuggestResult = Suggestion | string;
+
 export interface Parser {
-    parse: (reader: StringReader, properties: NodeProperties, serverInfo?: ServerInformation) => void | ParseInfo;
-    getSuggestions: (text: string, properties: NodeProperties, serverInfo?: ServerInformation) => string[];
+    /**
+     * Parse the argument as described in NodeProperties against this parser in the reader.  
+     * The context is optional for the literal and for tests
+     */
+    parse: (reader: StringReader, properties: NodeProperties, context?: CommandContext) => void;
+    /**
+     * List the suggestions at the end of the starting text described in `text`.
+     * @returns an array of Suggestions, either strings or a Suggestion objection
+     */
+    getSuggestions: (text: string, properties: NodeProperties, context?: CommandContext) => SuggestResult[];
 }
 
 export interface ParseResult {
@@ -161,4 +191,18 @@ export class CommandSyntaxException {
         diagnosis.type = this.type;
         return diagnosis;
     }
+}
+/**
+ * Find the datapack a file is in.
+ * @param uri The URI of the file
+ * @param normal The URI to fall back on (such as the workspace root)
+ */
+export function calculateDataFolder(uri: string, normal: string = ""): string {
+    const packToSearch = path.sep + dataFolderName + path.sep;
+    let packsFolderIndex = uri.lastIndexOf(packToSearch);
+    if (packsFolderIndex !== -1) {
+        packsFolderIndex += packToSearch.length;
+        return uri.substring(0, packsFolderIndex);
+    }
+    return normal;
 }

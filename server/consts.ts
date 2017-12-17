@@ -9,3 +9,4 @@ export const AXES = ["x", "y", "z"];
 export const COLORS = ["black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple",
     "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white", "reset"];
 export const COMMENTSTART = "#";
+export const dataFolderName = "datapacks";
