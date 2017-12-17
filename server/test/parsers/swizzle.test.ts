@@ -41,4 +41,11 @@ describe("Swizzle Argument Parser", () => {
             assert.throws(() => swizzleArgumentParser.parse(reader, null));
         });
     });
+    describe("getSuggestions()", () => {
+        it("should return a list of swizzles", () => {
+            assert.deepEqual(swizzleArgumentParser.getSuggestions("xy", null), ["xy", "xyz"]);
+            assert.deepEqual(swizzleArgumentParser.getSuggestions("y", null), ["y", "yx", "yz", "yxz", "yzx"]);
+            assert.deepEqual(swizzleArgumentParser.getSuggestions("zxy", null), ["zxy"]);
+        });
+    });
 });

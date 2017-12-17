@@ -13,7 +13,7 @@ export const swizzleArgumentParser: Parser = {
     parse: (reader: StringReader) => {
         const start = reader.cursor;
         const swizzlearr: SwizzleValue[] = [];
-        while (reader.canRead(0) && reader.peek() !== " ") {
+        while (reader.canRead() && reader.peek() !== " ") {
             const c: string = reader.read();
             let val: SwizzleValue;
             switch (c) {
@@ -36,7 +36,14 @@ export const swizzleArgumentParser: Parser = {
         }
     },
 
-    getSuggestions: () => {
-        return [];
+    getSuggestions: (start: string) => {
+        const suggest: string[] = ["x", "y", "z", "xy", "xz", "yx", "yz", "zx", "zy", "xyz", "xzy", "yxz", "yzx", "zxy", "zyx"];
+        const out: string[] = [];
+        for (const s of suggest) {
+            if (s.startsWith(start)) {
+                out.push(s);
+            }
+        }
+        return out;
     },
 };
