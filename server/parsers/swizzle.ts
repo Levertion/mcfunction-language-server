@@ -1,10 +1,6 @@
 import { StringReader } from "../string-reader";
 import { CommandSyntaxException, Parser } from "../types";
 
-enum SwizzleValue {
-    X, Y, Z,
-}
-
 const swizzleExceptions = {
     InvalidSwizzle: new CommandSyntaxException("Invalid swizzle, expected combination of 'x' 'y' and 'z'", "arguments.swizzle.invalid"),
 };
@@ -12,19 +8,19 @@ const swizzleExceptions = {
 export const swizzleArgumentParser: Parser = {
     parse: (reader: StringReader) => {
         const start = reader.cursor;
-        const swizzlearr: SwizzleValue[] = [];
+        const swizzlearr: string[] = [];
         while (reader.canRead() && reader.peek() !== " ") {
             const c: string = reader.read();
-            let val: SwizzleValue;
+            let val: string;
             switch (c) {
                 case "x":
-                    val = SwizzleValue.X;
+                    val = "x";
                     break;
                 case "y":
-                    val = SwizzleValue.Y;
+                    val = "y";
                     break;
                 case "z":
-                    val = SwizzleValue.Z;
+                    val = "z";
                     break;
                 default:
                     throw swizzleExceptions.InvalidSwizzle.create(start, reader.exceptionCursor());
