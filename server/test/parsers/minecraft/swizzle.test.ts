@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import { swizzleArgumentParser } from "../../parsers/minecraft/swizzle";
-import { StringReader } from "../../string-reader";
+import { swizzleArgumentParser } from "../../../parsers/minecraft/swizzle";
+import { StringReader } from "../../../string-reader";
 
 describe("Swizzle Argument Parser", () => {
     describe("parse()", () => {
