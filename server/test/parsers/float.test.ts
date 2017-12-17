@@ -89,4 +89,10 @@ describe("Float Argument Parser", () => {
             });
         });
     });
+    describe("getSuggestions()", () => {
+        it("should not give any suggestions", () => {
+            const properties: NodeProperties = { key: "test", path: [] };
+            assert.deepEqual(floatArgumentParser.getSuggestions("false", properties), []);
+        });
+    });
 });

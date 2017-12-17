@@ -83,4 +83,10 @@ describe("Integer Argument Parser", () => {
             });
         });
     });
+    describe("getSuggestions()", () => {
+        it("should not give any suggestions", () => {
+            const properties: NodeProperties = { key: "test", path: [] };
+            assert.deepEqual(integerArgumentParser.getSuggestions("false", properties), []);
+        });
+    });
 });
