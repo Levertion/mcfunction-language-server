@@ -10,7 +10,7 @@ describe("String Argument Parser", () => {
             it("should read to the end of the string", () => {
                 const reader = new StringReader("test space :\"-)(*");
                 assert.doesNotThrow(() => stringArgumentParser.parse(reader, properties));
-                assert.equal(reader.cursor, 16);
+                assert.equal(reader.cursor, 17);
             });
         });
         // These tests are small as the parser is just a wrapper for the stringreader, which has more comprehensive tests

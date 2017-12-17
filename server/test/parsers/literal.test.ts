@@ -14,7 +14,7 @@ describe("literalArgumentParser", () => {
             it("should set the cursor to end of the string when the literal goes to the end of the string", () => {
                 const reader = new StringReader("test");
                 literalArgumentParser.parse(reader, properties);
-                assert.equal(reader.cursor, 3);
+                assert.equal(reader.cursor, 4);
             });
             it("should set the cursor to after the string when it doesn't reach the end", () => {
                 const reader = new StringReader("test ");

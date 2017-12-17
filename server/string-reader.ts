@@ -2,7 +2,7 @@
  * These are implementations of parts of the brigadier command parsing system, for which the source is available as explained in the README at root.  
  * These are recreated to be more closely fitting to the Language server methodology
  */
-import { ARGUMENTSEPERATOR, QUOTE, STRINGESCAPE } from "./consts";
+import { QUOTE, STRINGESCAPE } from "./consts";
 import { CommandSyntaxException } from "./types";
 
 const EXCEPTIONS = {
@@ -19,10 +19,6 @@ const EXCEPTIONS = {
 };
 export class StringReader {
     public readonly string: string;
-    /**
-     * Whether the last character in the string has been read.
-     */
-    public endRead: boolean = false;
     private _cursor: number;
     /**
      * A String Reader. Converts a string into a linear format, which is suitable for Minecraft Commands.  
@@ -48,18 +44,12 @@ export class StringReader {
      * Get the text in the string which has been already read
      */
     public getRead(): string {
-        if (this.endRead) {
-            return this.string.substring(0);
-        }
         return this.string.substring(0, this.cursor);
     }
     /**
      * Get the text from the reader which hasn't been read yet.
      */
     public getRemaining(): string {
-        if (this.endRead) {
-            return "";
-        }
         return this.string.substring(this.cursor);
     }
     /**
@@ -67,10 +57,7 @@ export class StringReader {
      * @param length The number of characters. Can be omitted
      */
     public canRead(length: number = 1): boolean {
-        if (this.endRead) {
-            return false;
-        }
-        return this.cursor + length < this.string.length;
+        return (this.cursor + length) <= this.string.length;
     }
     /**
      * Look at a character without moving the cursor.
@@ -105,12 +92,12 @@ export class StringReader {
         }
         // The Java readInt crashes upon a `.`, but the regex includes on in brigadier
         if (readToTest.indexOf(".") !== -1) {
-            throw EXCEPTIONS.InvalidInt.create(start, this.exceptionCursor(), this.string.substring(start, this.cursor));
+            throw EXCEPTIONS.InvalidInt.create(start, this.cursor, this.string.substring(start, this.cursor));
         }
         try {
             return Number.parseInt(readToTest, 10);
         } catch (error) {
-            throw EXCEPTIONS.InvalidInt.create(start, this.exceptionCursor(), readToTest);
+            throw EXCEPTIONS.InvalidInt.create(start, this.cursor, readToTest);
         }
     }
     /**
@@ -125,7 +112,7 @@ export class StringReader {
         try {
             return parseFloat(readToTest);
         } catch (error) {
-            throw EXCEPTIONS.InvalidFloat.create(start, this.exceptionCursor(), readToTest);
+            throw EXCEPTIONS.InvalidFloat.create(start, this.cursor, readToTest);
         }
     }
     /**
@@ -162,9 +149,6 @@ export class StringReader {
             } else if (c === STRINGESCAPE) {
                 escaped = true;
             } else if (c === QUOTE) {
-                if (!this.canRead()) {
-                    this.endRead = true;
-                }
                 return result;
             } else {
                 result += c;
@@ -198,7 +182,7 @@ export class StringReader {
             case "false":
                 return false;
             default:
-                throw EXCEPTIONS.InvalidBool.create(start, this.exceptionCursor(), value);
+                throw EXCEPTIONS.InvalidBool.create(start, this.cursor, value);
         }
     }
     /**
@@ -224,7 +208,6 @@ export class StringReader {
             if (this.canRead()) {
                 this.skip();
             } else {
-                this.endRead = true;
                 return this.string.substring(begin);
             }
         }
@@ -251,26 +234,16 @@ export class StringReader {
         return this._cursor;
     }
     public set cursor(v: number) {
-        if (v < this.string.length) {
-            this.endRead = false;
+        if (v <= this.string.length) {
             this._cursor = v;
         } else {
             // Assummes a string length of greater than 0
-            this.endRead = true;
-            this._cursor = this.string.length - 1;
+            this._cursor = this.string.length;
         }
     }
     public readRemaining(): string {
         const remaining = this.getRemaining();
-        this.cursor = this.string.length - 1;
-        this.endRead = true;
+        this.cursor = this.string.length;
         return remaining;
-    }
-    /**
-     * Get the cursor in a way which is safe to end an exception  
-     * @param c The character which if it is under the cursor should be used to lower the position.
-     */
-    public exceptionCursor(c: string = ARGUMENTSEPERATOR): number {
-        return this.peek() === c ? this.cursor : this.cursor + 1;
     }
 }

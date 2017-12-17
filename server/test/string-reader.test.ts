@@ -52,9 +52,9 @@ describe("string-reader", () => {
         it("should give the full length of the string when the cursor is at the start", () => {
             assert.equal(reader.getRemainingLength(), 4);
         });
-        it("should give the one when the cursor is at the end", () => {
-            reader.cursor = 3;
-            assert.equal(reader.getRemainingLength(), 1);
+        it("should give zero when the cursor is at the end", () => {
+            reader.cursor = 4;
+            assert.equal(reader.getRemainingLength(), 0);
         });
     });
     describe("getRead()", () => {
@@ -65,12 +65,8 @@ describe("string-reader", () => {
         it("should give nothing when the cursor is at the start", () => {
             assert.equal(reader.getRead(), "");
         });
-        it("should give the full string except the last character when the cursor is at the end", () => {
-            reader.cursor = 3;
-            assert.equal(reader.getRead(), "tes");
-        });
-        it("should give the full string when the full string has been read", () => {
-            reader.readRemaining();
+        it("should give the full string when the cursor is at the end", () => {
+            reader.cursor = 4;
             assert.equal(reader.getRead(), "test");
         });
     });
@@ -82,12 +78,8 @@ describe("string-reader", () => {
         it("should give the full text when the cursor is at the start", () => {
             assert.equal(reader.getRemaining(), "test");
         });
-        it("should give the last character if the cursor is at the end", () => {
-            reader.cursor = 3;
-            assert.equal(reader.getRemaining(), "t");
-        });
         it("should give an empty string when the cursor is almost at the end", () => {
-            reader.readRemaining();
+            reader.cursor = 4;
             assert.equal(reader.getRemaining(), "");
         });
     });
@@ -102,13 +94,13 @@ describe("string-reader", () => {
             it("should return true when the cursor is at the start", () => {
                 assert.equal(reader.canRead(), true);
             });
-            it("should return false when the cursor is at the end of the string and the end has been read", () => {
-                reader.readRemaining();
+            it("should return false when the cursor is at the end of the string", () => {
+                reader.cursor = 4;
                 assert.equal(reader.canRead(), false);
             });
-            it("should return false when the cursor is at the end of the string and the end hasn't been read", () => {
+            it("should return true when the cursor is at the second to last character", () => {
                 reader.cursor = 3;
-                assert.equal(reader.canRead(), false);
+                assert.equal(reader.canRead(), true);
             });
             it("should return true when the cursor is not at the end of the string", () => {
                 reader.cursor = 2;
@@ -117,12 +109,18 @@ describe("string-reader", () => {
         });
         describe("with input", () => {
             it("should return true with an input where it can read to", () => {
-                assert.equal(reader.canRead(2), true);
                 assert.equal(reader.canRead(3), true);
+                assert.equal(reader.canRead(2), true);
+                assert.equal(reader.canRead(1), true);
                 reader.skip();
                 assert.equal(reader.canRead(2), true);
+                assert.equal(reader.canRead(1), true);
+                reader.skip();
+                assert.equal(reader.canRead(1), true);
             });
-            it("should return false with an input where it can read to", () => {
+            it("should return false with an input where it can't read to", () => {
+                assert.equal(reader.canRead(5), false);
+                reader.skip();
                 assert.equal(reader.canRead(4), false);
                 reader.skip();
                 assert.equal(reader.canRead(3), false);
@@ -176,9 +174,9 @@ describe("string-reader", () => {
             });
         });
         it("should not increase the cursor past the maximum", () => {
-            reader.cursor = 3;
+            reader.cursor = 4;
             reader.read();
-            assert.equal(reader.cursor, 3);
+            assert.equal(reader.cursor, 4);
         });
     });
     describe("skip()", () => {
@@ -191,9 +189,9 @@ describe("string-reader", () => {
             assert.equal(reader.cursor, 1);
         });
         it("should leave the cursor in place when it is at the end", () => {
-            reader.cursor = 3;
+            reader.cursor = 4;
             reader.skip();
-            assert.equal(reader.cursor, 3);
+            assert.equal(reader.cursor, 4);
         });
     });
     describe("skipWhitespace", () => {
@@ -211,7 +209,7 @@ describe("string-reader", () => {
             const reader = new StringReader("test   ");
             reader.cursor = 4;
             reader.skipWhitespace();
-            assert.equal(reader.cursor, 6);
+            assert.equal(reader.cursor, 7);
         });
         it("should do nothing when the cursor is within a string", () => {
             const reader = new StringReader("nowhitespace");
@@ -299,7 +297,7 @@ describe("string-reader", () => {
     describe("readQuotedString()", () => {
         it("should return an empty string if it reading from the end", () => {
             const reader = new StringReader("test");
-            reader.cursor = 3;
+            reader.cursor = 4;
             assert.equal(reader.readQuotedString(), "");
         });
         it("should throw an error if there is no opening quote", () => {
@@ -378,7 +376,7 @@ describe("string-reader", () => {
         it("should read the rest of the string if the callback keeps returning true", () => {
             const reader = new StringReader("test");
             assert.equal(reader.readWhileFunction(() => true), "test");
-            assert.equal(reader.cursor, 3);
+            assert.equal(reader.cursor, 4);
         });
         it("should end on the first character not to get a true", () => {
             const reader = new StringReader("test");
@@ -404,15 +402,13 @@ describe("string-reader", () => {
         it("should read the full string from the start", () => {
             const reader = new StringReader("test");
             assert.equal(reader.readRemaining(), "test");
-            assert.equal(reader.cursor, 3);
-            assert.equal(reader.endRead, true);
+            assert.equal(reader.cursor, 4);
         });
         it("should read the rest of the string after other stuff has been read", () => {
             const reader = new StringReader("longtest");
             reader.cursor = 3;
             assert.equal(reader.readRemaining(), "gtest");
-            assert.equal(reader.cursor, 7);
-            assert.equal(reader.endRead, true);
+            assert.equal(reader.cursor, 8);
         });
     });
 });

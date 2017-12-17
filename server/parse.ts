@@ -78,7 +78,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                     reader.cursor = begin;
                     try {
                         literalArgumentParser.parse(reader, childProperties);
-                        if (reader.peek() !== ARGUMENTSEPERATOR && !reader.endRead) {
+                        if (reader.peek() !== ARGUMENTSEPERATOR && reader.canRead()) {
                             // This is to avoid repetition.
                             throw {};
                         }
@@ -94,7 +94,12 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                     if (!successful) {
                         const oldContext = context;
                         // Deep clone.
-                        const newContext = JSON.parse(JSON.stringify(context));
+                        const newContext = JSON.parse(JSON.stringify(context, (k, v) => {
+                            if (k !== "server") {
+                                return v;
+                            }
+                            return;
+                        }));
                         try {
                             // Will need to try the parser of child
                             // It will log if the parser is not recognised, with an explanation messages
@@ -103,12 +108,12 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                             if (parsers.hasOwnProperty(child.parser)) {
                                 const parser = parsers[child.parser];
                                 parser.parse(reader, childProperties, newContext);
-                                if (reader.peek() === ARGUMENTSEPERATOR || reader.endRead) {
+                                if (reader.peek() === ARGUMENTSEPERATOR || !reader.canRead()) {
                                     issue = null;
                                     if (isEqual(newContext, oldContext)) {
                                         context = newContext;
                                     }
-                                    if (reader.endRead) {
+                                    if (!reader.canRead()) {
                                         successful = { key: childKey, high: reader.cursor + 1, path: newPath, low: begin, context };
                                     } else {
                                         successful = { key: childKey, high: reader.cursor, path: newPath, low: begin, context };
@@ -133,7 +138,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
         if (reader.canRead()) {
             if (!!node.children[successful.key].children) {
                 reader.skip();
-                if (!reader.endRead) {
+                if (reader.canRead()) {
                     const parseResult = parseChildren(node.children[successful.key], reader, newPath, context);
                     issue = parseResult.issue;
                     nodes.push(...parseResult.nodes);

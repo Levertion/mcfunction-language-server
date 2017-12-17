@@ -16,10 +16,10 @@ export const floatArgumentParser: Parser = {
         const max = Math.min(isNumber(properties.max) ? properties.max : JAVAMAXFLOAT, JAVAMAXFLOAT);
         const min = Math.max(isNumber(properties.min) ? properties.min : JAVAMINFLOAT, JAVAMINFLOAT);
         if (read > max) {
-            throw FLOATEXCEPTIONS.TOOBIG.create(start, reader.exceptionCursor(), max, read);
+            throw FLOATEXCEPTIONS.TOOBIG.create(start, reader.cursor, max, read);
         }
         if (read < min) {
-            throw FLOATEXCEPTIONS.TOOSMALL.create(start, reader.exceptionCursor(), min, read);
+            throw FLOATEXCEPTIONS.TOOSMALL.create(start, reader.cursor, min, read);
         }
     },
     getSuggestions: () => {
