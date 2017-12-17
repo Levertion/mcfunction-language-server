@@ -1,5 +1,5 @@
-import { StringReader } from "../string-reader";
-import { CommandSyntaxException, Parser } from "../types";
+import { StringReader } from "../../string-reader";
+import { CommandSyntaxException, Parser } from "../../types";
 
 const swizzleExceptions = {
     InvalidSwizzle: new CommandSyntaxException("Invalid swizzle, expected combination of 'x' 'y' and 'z'", "arguments.swizzle.invalid"),
