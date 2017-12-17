@@ -141,6 +141,21 @@ export interface CommandContext {
     fileUri: string;
 }
 
+export interface Suggestion {
+    /**
+     * The string to suggest.
+     */
+    value: string;
+    /**
+     * The start from where value should be replaced. 0 indexed character gaps.
+     * E.g. `@e[na` with the suggestion `{value:"name=",start:3}` 
+     * would make `@e[name=` when accepted.
+     */
+    start: number;
+}
+
+export type SuggestResult = Suggestion | string;
+
 export interface Parser {
     /**
      * Parse the argument as described in NodeProperties against this parser in the reader.  
@@ -149,8 +164,9 @@ export interface Parser {
     parse: (reader: StringReader, properties: NodeProperties, context?: CommandContext) => void;
     /**
      * List the suggestions at the end of the starting text described in `text`.
+     * @returns an array of Suggestions, either strings or a Suggestion objection
      */
-    getSuggestions: (text: string, properties: NodeProperties, context?: CommandContext) => string[];
+    getSuggestions: (text: string, properties: NodeProperties, context?: CommandContext) => SuggestResult[];
 }
 
 export interface ParseResult {
