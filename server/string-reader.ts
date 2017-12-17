@@ -70,7 +70,7 @@ export class StringReader {
         if (this.endRead) {
             return false;
         }
-        return this.cursor + length < this.string.length;
+        return this.cursor + length <= this.string.length;
     }
     /**
      * Look at a character without moving the cursor.

@@ -107,7 +107,7 @@ describe("string-reader", () => {
                 assert.equal(reader.canRead(), false);
             });
             it("should return false when the cursor is at the end of the string and the end hasn't been read", () => {
-                reader.cursor = 3;
+                reader.cursor = 4;
                 assert.equal(reader.canRead(), false);
             });
             it("should return true when the cursor is not at the end of the string", () => {
@@ -123,11 +123,11 @@ describe("string-reader", () => {
                 assert.equal(reader.canRead(2), true);
             });
             it("should return false with an input where it can read to", () => {
+                assert.equal(reader.canRead(5), false);
+                reader.skip();
                 assert.equal(reader.canRead(4), false);
                 reader.skip();
                 assert.equal(reader.canRead(3), false);
-                reader.skip();
-                assert.equal(reader.canRead(2), false);
             });
         });
     });
@@ -299,7 +299,7 @@ describe("string-reader", () => {
     describe("readQuotedString()", () => {
         it("should return an empty string if it reading from the end", () => {
             const reader = new StringReader("test");
-            reader.cursor = 3;
+            reader.cursor = 4;
             assert.equal(reader.readQuotedString(), "");
         });
         it("should throw an error if there is no opening quote", () => {
