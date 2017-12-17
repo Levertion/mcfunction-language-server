@@ -1,8 +1,6 @@
 import { Interval, IntervalTree } from "node-interval-tree";
-import * as path from "path";
 import { format } from "util";
-import { Diagnostic, DiagnosticSeverity } from "vscode-languageserver/lib/main";
-import { dataFolderName } from "./consts";
+import { DiagnosticSeverity } from "vscode-languageserver/lib/main";
 import { StringReader } from "./string-reader";
 
 /**
@@ -127,13 +125,6 @@ export interface FunctionDiagnostic {
     end: number;
 }
 
-export function toDiagnostic(diagnosis: FunctionDiagnostic, line: number): Diagnostic {
-    return Diagnostic.create({
-        start: { line, character: diagnosis.start },
-        end: { line, character: diagnosis.end },
-    }, diagnosis.message, diagnosis.severity, diagnosis.type, "mcfunction");
-}
-
 export interface CommandContext {
     server: ServerInformation;
     executortype: "any" | "player" | "noplayer";
@@ -191,18 +182,4 @@ export class CommandSyntaxException {
         diagnosis.type = this.type;
         return diagnosis;
     }
-}
-/**
- * Find the datapack a file is in.
- * @param uri The URI of the file
- * @param normal The URI to fall back on (such as the workspace root)
- */
-export function calculateDataFolder(uri: string, normal: string = ""): string {
-    const packToSearch = path.sep + dataFolderName + path.sep;
-    let packsFolderIndex = uri.lastIndexOf(packToSearch);
-    if (packsFolderIndex !== -1) {
-        packsFolderIndex += packToSearch.length;
-        return uri.substring(0, packsFolderIndex);
-    }
-    return normal;
 }

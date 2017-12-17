@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import { platform } from "os";
-import { calculateDataFolder } from "../types";
+import { calculateDataFolder, getNodeAlongPath } from "../miscUtils";
 
 describe("calculateDataFolder()", () => {
     it("should find the datapack folder of a string on linux", function() {
@@ -29,5 +29,14 @@ describe("calculateDataFolder()", () => {
             this.skip();
         }
         assert.equal(calculateDataFolder("C:\\Users\\user\\datapacksyche\\pack\\file.txt", "C:\\Test\\Default\\"), "C:\\Test\\Default\\");
+    });
+});
+
+describe("getNodeAlongPath()", () => {
+    it("should find the node along a path", () => {
+        assert.deepEqual(getNodeAlongPath(["j", "g"], { type: "root", children: { j: { type: "root", children: { g: { type: "argument" } } } } }), { type: "argument" });
+    });
+    it("should throw an error when there is an incorrect path", () => {
+        assert.throws(() => getNodeAlongPath(["j", "invalid"], { type: "root", children: { j: { type: "root" } } }));
     });
 });

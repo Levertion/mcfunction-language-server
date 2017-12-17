@@ -1,13 +1,14 @@
 import isEqual = require("lodash.isequal");
 import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { ARGUMENTSEPERATOR, COMMENTSTART } from "./consts";
+import { getNodeAlongPath, toDiagnostic } from "./miscUtils";
 import { boolArgumentParser } from "./parsers/bool";
 import { floatArgumentParser } from "./parsers/float";
 import { integerArgumentParser } from "./parsers/integer";
 import { literalArgumentParser } from "./parsers/literal";
 import { stringArgumentParser } from "./parsers/string";
 import { StringReader } from "./string-reader";
-import { CommandContext, CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, Parser, ParseResult, ServerInformation, toDiagnostic } from "./types";
+import { CommandContext, CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, Parser, ParseResult, ServerInformation } from "./types";
 
 const PARSEEXCEPTIONS = {
     NoChildren: new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless"),
@@ -112,6 +113,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                                     issue = null;
                                     if (isEqual(newContext, oldContext)) {
                                         context = newContext;
+                                        context.server = oldContext.server;
                                     }
                                     if (!reader.canRead()) {
                                         successful = { key: childKey, high: reader.cursor + 1, path: newPath, low: begin, context };
@@ -136,10 +138,17 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
     }
     if (!!successful && !issue) {
         if (reader.canRead()) {
-            if (!!node.children[successful.key].children) {
+            if (!!node.children[successful.key].children || !!node.children[successful.key].redirect) {
+                let nodeToParse;
+                if (!!node.children[successful.key].children) {
+                    nodeToParse = node.children[successful.key];
+                } else {
+                    nodeToParse = getNodeAlongPath(node.children[successful.key].redirect, context.server.tree);
+                    newPath = node.children[successful.key].redirect;
+                }
                 reader.skip();
                 if (reader.canRead()) {
-                    const parseResult = parseChildren(node.children[successful.key], reader, newPath, context);
+                    const parseResult = parseChildren(nodeToParse, reader, newPath, context);
                     issue = parseResult.issue;
                     nodes.push(...parseResult.nodes);
                 }

@@ -12,9 +12,10 @@ import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
 import {
     createConnection, TextDocumentSyncKind,
 } from "vscode-languageserver";
+import { calculateDataFolder } from "./miscUtils";
 import { LinesToParse, parseLines } from "./parse";
 import { getChangedLines } from "./server-information";
-import { calculateDataFolder, DocLine, NodeRange, ServerInformation } from "./types";
+import { DocLine, NodeRange, ServerInformation } from "./types";
 // Creates the LSP connection
 const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 
@@ -62,8 +63,10 @@ connection.onInitialize((params) => {
                         },
                     },
                 },
-                word: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "word" } },
-                phrase: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "phrase" } },
+            },
+            redirect: {
+                type: "literal",
+                redirect: ["argtest"],
             },
         },
     };
