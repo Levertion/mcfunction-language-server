@@ -11,24 +11,14 @@ export const swizzleArgumentParser: Parser = {
         const swizzlearr: string[] = [];
         while (reader.canRead() && reader.peek() !== " ") {
             const c: string = reader.read();
-            let val: string;
-            switch (c) {
-                case "x":
-                    val = "x";
-                    break;
-                case "y":
-                    val = "y";
-                    break;
-                case "z":
-                    val = "z";
-                    break;
-                default:
-                    throw swizzleExceptions.InvalidSwizzle.create(start, reader.exceptionCursor());
+            if (c.match(/[x-z]/)) {
+                if (swizzlearr.includes(c)) {
+                    throw swizzleExceptions.InvalidSwizzle.create(start, reader.cursor);
+                }
+                swizzlearr.push(c);
+            } else {
+                throw swizzleExceptions.InvalidSwizzle.create(start, reader.cursor);
             }
-            if (swizzlearr.includes(val)) {
-                throw swizzleExceptions.InvalidSwizzle.create(start, reader.exceptionCursor());
-            }
-            swizzlearr.push(val);
         }
     },
 
