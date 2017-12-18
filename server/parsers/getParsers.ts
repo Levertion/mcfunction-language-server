@@ -5,6 +5,9 @@ const defaultParsers: { [id: string]: string } = {
     "brigadier:float": "./brigadier/float",
     "brigadier:bool": "./brigadier/bool",
     "brigadier:string": "./brigadier/string",
+    "minecraft:swizzle": "./minecraft/swizzle",
+    "minecraft:operation": "./minecraft/operation",
+    "minecraft:objective": "./minecraft/objective",
 };
 
 const parserCache: { [id: string]: Parser } = {};

@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { objectiveArgumentParser } from "../../../parsers/minecraft/objective";
+import { parser as objectiveArgumentParser } from "../../../parsers/minecraft/objective";
 import { StringReader } from "../../../string-reader";
 
 describe("Objective Argument Parser", () => {

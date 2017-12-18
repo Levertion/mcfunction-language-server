@@ -73,19 +73,30 @@ export function getCompletions(params: TextDocumentPositionParams, serverInfo: S
                     } else {
                         continue;
                     }
-                    const result = parser.getSuggestions(lineInfo.text.substring(start), childProperties, context);
+                    const result = parser.getSuggestions(lineInfo.text.substring(start, params.position.character), childProperties, context);
                     completions.push(...result.map<CompletionItem>((suggestion) => {
                         let kind: CompletionItemKind = CompletionItemKind.Keyword;
                         if (!!parser.kind) {
                             kind = parser.kind;
                         }
                         if (typeof suggestion === "string") {
-                            return { textEdit: { range: { start: { line: params.position.line, character: start }, end: { line: params.position.line, character: params.position.character } }, newText: suggestion }, label: suggestion, kind };
+                            return {
+                                textEdit: {
+                                    range: { start: { line: params.position.line, character: start }, end: { line: params.position.line, character: params.position.character } },
+                                    newText: suggestion,
+                                }, label: suggestion, kind,
+                            };
                         } else {
                             if (!!suggestion.kind) {
                                 kind = suggestion.kind;
                             }
-                            return { textEdit: { range: { start: { line: params.position.line, character: start + suggestion.start }, end: { line: params.position.line, character: params.position.character } }, newText: suggestion.value }, label: suggestion.value };
+                            return {
+                                textEdit: {
+                                    range: {
+                                        start: { line: params.position.line, character: start + suggestion.start }, end: { line: params.position.line, character: params.position.character },
+                                    }, newText: suggestion.value,
+                                }, label: suggestion.value, kind,
+                            };
                         }
                     }));
                 }

@@ -5,6 +5,7 @@
     "author": "Levertion",
     "devDependencies": {
         "@types/assert": "0.0.31",
+        "@types/js-combinatorics": "^0.5.29",
         "@types/lodash.isequal": "^4.5.2",
         "@types/mocha": "^2.2.44",
         "@types/node": "^8.0.53",

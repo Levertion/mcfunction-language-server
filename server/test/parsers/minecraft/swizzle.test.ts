@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { swizzleArgumentParser } from "../../../parsers/minecraft/swizzle";
+import { parser as swizzleArgumentParser } from "../../../parsers/minecraft/swizzle";
 import { StringReader } from "../../../string-reader";
 
 describe("Swizzle Argument Parser", () => {
@@ -44,7 +44,7 @@ describe("Swizzle Argument Parser", () => {
     describe("getSuggestions()", () => {
         it("should return a list of swizzles", () => {
             assert.deepEqual(swizzleArgumentParser.getSuggestions("xy", null), ["xy", "xyz"]);
-            assert.deepEqual(swizzleArgumentParser.getSuggestions("y", null), ["y", "yx", "yz", "yxz", "yzx"]);
+            assert.deepEqual(swizzleArgumentParser.getSuggestions("y", null), ["y", "yx", "yz", "yxz"]);
             assert.deepEqual(swizzleArgumentParser.getSuggestions("zxy", null), ["zxy"]);
         });
     });

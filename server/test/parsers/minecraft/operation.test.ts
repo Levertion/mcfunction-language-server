@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { operationArgumentParser } from "../../../parsers/minecraft/operation";
+import { parser as operationArgumentParser } from "../../../parsers/minecraft/operation";
 import { StringReader } from "../../../string-reader";
 
 describe("Operation argument parser", () => {

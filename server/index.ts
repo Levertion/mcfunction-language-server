@@ -156,5 +156,9 @@ connection.onHover((params) => {
 });
 
 connection.onCompletion((params) => {
-    return getCompletions(params, serverInfo);
+    const result = {
+        items: getCompletions(params, serverInfo),
+        isIncomplete: true,
+    };
+    return result;
 });

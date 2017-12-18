@@ -7,7 +7,7 @@ const operationExceptions = {
 
 const operations = ["=", "+=", "-=", "*=", "/=", "%=", "<", ">", "><"];
 
-export const operationArgumentParser: Parser = {
+export const parser: Parser = {
     parse: (reader: StringReader) => {
         const start = reader.cursor;
         const op = reader.readUntilRegexp(/ /);

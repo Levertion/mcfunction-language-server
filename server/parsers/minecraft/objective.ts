@@ -5,7 +5,7 @@ const objectiveExceptions = {
     TooLong: new CommandSyntaxException("Objective '%s' is longer than 16 characters", "arguments.objective.toolong"),
 };
 
-export const objectiveArgumentParser: Parser = {
+export const parser: Parser = {
     parse: (reader: StringReader) => {
         const start: number = reader.cursor;
         const obj: string = reader.readUnquotedString();
