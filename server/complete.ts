@@ -1,3 +1,4 @@
+import isEqual = require("lodash.isequal");
 import { IntervalTree } from "node-interval-tree";
 import { CompletionItem, CompletionItemKind, TextDocumentPositionParams } from "vscode-languageserver/lib/main";
 import { getNodeAlongPath } from "./miscUtils";
@@ -24,14 +25,15 @@ export function getCompletions(params: TextDocumentPositionParams, serverInfo: S
             let curTree: CommandNode;
             let context: CommandContext;
             let start = 0;
-            const path: NodePath = [];
+            let path: NodePath = [];
             if (tree.count > 0) {
                 const matches = tree.search(params.position.character, params.position.character);
                 if (matches.length > 0) {
                     const match = matches[0];
                     context = match.context; // This is not right? It needs to be the context of the node before to be accurate.
                     // Note that if path is empty, getNodeAlongPath returns the complete tree
-                    curTree = getNodeAlongPath(match.path.filter((_, i, s) => i < (s.length - 1)), serverInfo.tree);
+                    const shortenedPath = match.path.filter((_, i, s) => i < (s.length - 1));
+                    curTree = getNodeAlongPath(shortenedPath, serverInfo.tree);
                     start = match.low;
                 } else {
                     const ordered = Array.from(tree.inOrder());
@@ -39,6 +41,7 @@ export function getCompletions(params: TextDocumentPositionParams, serverInfo: S
                     curTree = getNodeAlongPath(last.path, serverInfo.tree);
                     context = last.context;
                     start = last.high + 1;
+                    path = last.path;
                 }
             } else {
                 curTree = serverInfo.tree;
@@ -46,6 +49,9 @@ export function getCompletions(params: TextDocumentPositionParams, serverInfo: S
             }
             if (!curTree.children && curTree.redirect) {
                 curTree = getNodeAlongPath(curTree.redirect, serverInfo.tree);
+            }
+            if (isEqual(path, ["execute", "run"])) {
+                curTree = serverInfo.tree;
             }
             for (const childKey in curTree.children) {
                 if (curTree.children.hasOwnProperty(childKey)) {
