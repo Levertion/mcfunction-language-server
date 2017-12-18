@@ -124,8 +124,6 @@ describe("string-reader", () => {
                 assert.equal(reader.canRead(4), false);
                 reader.skip();
                 assert.equal(reader.canRead(3), false);
-                reader.skip();
-                assert.equal(reader.canRead(2), false);
             });
         });
     });
