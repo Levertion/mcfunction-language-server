@@ -1,4 +1,4 @@
-import { Parser } from "../types";
+import { Parser, ServerInformation } from "../types";
 
 const defaultParsers: { [id: string]: string } = {
     "brigadier:integer": "./brigadier/integer",
@@ -9,9 +9,8 @@ const defaultParsers: { [id: string]: string } = {
 
 const parserCache: { [id: string]: Parser } = {};
 
-export function getParser(id: string,
-    //  serverInfo: ServerInformation for possibly allowing custom parsers using a setting.
-): Parser {
+export function getParser(id: string, serverInfo: ServerInformation, // Also for possibly allowing custom parsers using a setting.
+): Parser | void {
     if (defaultParsers.hasOwnProperty(id)) {
         if (!parserCache.hasOwnProperty(id)) {
             try {
@@ -22,6 +21,7 @@ export function getParser(id: string,
         }
         return parserCache[id];
     } else {
-        throw Error(`No parser with id ${id} found.`);
+        serverInfo.logger(`No parser with id ${id} found.`);
+        return;
     }
 }

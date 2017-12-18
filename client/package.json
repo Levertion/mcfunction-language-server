@@ -5,7 +5,7 @@
     },
     "description": "Minecraft Command validation",
     "name": "mcfunction",
-    "version": "0.0.1",
+    "version": "0.0.1-alpha",
     "author": "Levertion",
     "publisher": "Levertion",
     "license": "MIT",

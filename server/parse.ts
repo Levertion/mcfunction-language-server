@@ -91,7 +91,10 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
                             }
                             return;
                         }));
-                        const parser = getParser(child.parser);
+                        const parser = getParser(child.parser, context.server);
+                        if (!parser) {
+                            continue;
+                        }
                         try {
                             parser.parse(reader, childProperties, newContext);
                             if (reader.peek() === ARGUMENTSEPERATOR || !reader.canRead()) {

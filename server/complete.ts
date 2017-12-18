@@ -59,7 +59,11 @@ export function getCompletions(params: TextDocumentPositionParams, serverInfo: S
                     if (child.type === "literal") {
                         parser = literalArgumentParser;
                     } else if (child.type === "argument") {
-                        parser = getParser(child.parser);
+                        const tempparser = getParser(child.parser, serverInfo);
+                        if (!tempparser) {
+                            continue;
+                        }
+                        parser = tempparser;
                     } else {
                         continue;
                     }

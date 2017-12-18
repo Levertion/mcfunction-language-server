@@ -34,7 +34,8 @@ connection.onInitialize((params) => {
     serverInfo.documentsInformation = {};
     // Remove possibility of surplus connection
     serverInfo.logger = (s) => connection.console.log(s);
-    serverInfo.tree = {
+    serverInfo.tree = require("../commands.json");
+    /* {
         type: "root", children: {
             test: { type: "literal", executable: true },
             test2: { type: "literal", children: { testChild: { type: "literal", executable: true } } },
@@ -69,7 +70,7 @@ connection.onInitialize((params) => {
                 redirect: ["argtest"],
             },
         },
-    };
+    }; */
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);
     return {
         capabilities: {
