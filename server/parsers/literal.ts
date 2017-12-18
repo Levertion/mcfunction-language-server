@@ -1,3 +1,4 @@
+import { CompletionItemKind } from "vscode-languageserver/lib/main";
 import { StringReader } from "../string-reader";
 import { CommandSyntaxException, NodeProperties, Parser } from "../types";
 
@@ -30,4 +31,5 @@ export const literalArgumentParser: Parser = {
             return [];
         }
     },
+    kind: CompletionItemKind.Method,
 };

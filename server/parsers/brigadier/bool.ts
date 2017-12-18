@@ -1,3 +1,4 @@
+import { CompletionItemKind } from "vscode-languageserver/lib/main";
 import { StringReader } from "../../string-reader";
 import { Parser } from "../../types";
 
@@ -15,4 +16,5 @@ export const parser: Parser = {
         }
         return result;
     },
+    kind: CompletionItemKind.Keyword,
 };

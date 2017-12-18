@@ -12,6 +12,7 @@ import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
 import {
     createConnection, TextDocumentSyncKind,
 } from "vscode-languageserver";
+import { getCompletions } from "./complete";
 import { calculateDataFolder } from "./miscUtils";
 import { LinesToParse, parseLines } from "./parse";
 import { getChangedLines } from "./server-information";
@@ -22,8 +23,7 @@ const connection = createConnection(new IPCMessageReader(process), new IPCMessag
 connection.listen();
 /**
  * Information about the server.  
- * Initialised as invalid ServerInfo  
- * will be setup in connection.onInitialise, but needs to be accessed in module scope.
+ * Initialised as invalid ServerInfo, but is setup in connection.onInitialise
  */
 const serverInfo: ServerInformation = {} as ServerInformation;
 // Setup the server.
@@ -78,6 +78,7 @@ connection.onInitialize((params) => {
                 change: TextDocumentSyncKind.Incremental,
             },
             hoverProvider: true,
+            completionProvider: { resolveProvider: false, triggerCharacters: [] },
         },
     };
 });
@@ -115,7 +116,7 @@ connection.onDidOpenTextDocument((params) => {
     connection.console.log("Document Opened");
     const lines = params.textDocument.text.split(/\r?\n/g);
     serverInfo.documentsInformation[params.textDocument.uri] = {
-        lines: new Array(lines.length).fill("").map<DocLine>(() => ({ nodes: [] })),
+        lines: new Array(lines.length).fill("").map<DocLine>((_, i) => ({ nodes: [], text: lines[i] })),
         packFolderURI: calculateDataFolder(params.textDocument.uri, serverInfo.workspaceFolder),
     };
     parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo, connection);
@@ -129,9 +130,14 @@ connection.onDidCloseTextDocument((params) => {
 connection.onHover((params) => {
     if (!!serverInfo.documentsInformation[params.textDocument.uri]) {
         const lineInfo = serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line];
-        const tree = new IntervalTree<NodeRange>();
-        for (const node of lineInfo.nodes) {
-            tree.insert(node);
+        let tree: IntervalTree<NodeRange>;
+        if (!!lineInfo.tree) {
+            tree = lineInfo.tree;
+        } else {
+            tree = new IntervalTree<NodeRange>();
+            for (const node of lineInfo.nodes) {
+                tree.insert(node);
+            }
         }
         const matching = tree.search(params.position.character, params.position.character);
         if (matching.length > 0) {
@@ -146,4 +152,8 @@ connection.onHover((params) => {
     } else {
         return { contents: "" };
     }
+});
+
+connection.onCompletion((params) => {
+    return getCompletions(params, serverInfo);
 });

@@ -11,7 +11,7 @@ const PARSEEXCEPTIONS = {
     NoChildren: new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless"),
     MissingArgSep: new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace"),
     IncompleteCommand: new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete", DiagnosticSeverity.Warning),
-    NoSuccesses: new CommandSyntaxException("No nodes which matched %s found", "command.parsing.matchless"),
+    NoSuccesses: new CommandSyntaxException("No nodes which matched '%s' found", "command.parsing.matchless"),
     UnexpectedSeperator: new CommandSyntaxException(`Unexpected trailing argument seperator '${ARGUMENTSEPERATOR}'`, "command.parsing.trailing", DiagnosticSeverity.Warning),
 };
 
@@ -26,6 +26,7 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation, c
         const text = value.lines[index];
         const lineNo = value.numbers[index];
         const info = serverInfo.documentsInformation[value.uri].lines[lineNo];
+        info.text = text;
         if (text.length > 0 && !text.startsWith(COMMENTSTART)) {
             const context: CommandContext = { executortype: "any", fileUri: value.uri, server: serverInfo };
             const reader = new StringReader(text);

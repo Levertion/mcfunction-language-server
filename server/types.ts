@@ -1,6 +1,6 @@
 import { Interval, IntervalTree } from "node-interval-tree";
 import { format } from "util";
-import { DiagnosticSeverity } from "vscode-languageserver/lib/main";
+import { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver/lib/main";
 import { StringReader } from "./string-reader";
 
 /**
@@ -114,6 +114,7 @@ export interface DocLine {
     issue?: FunctionDiagnostic;
     nodes: NodeRange[];
     tree?: IntervalTree<NodeRange>;
+    text?: string;
 }
 
 export interface FunctionDiagnostic {
@@ -142,6 +143,10 @@ export interface Suggestion {
      * would make `@e[name=` when accepted.
      */
     start: number;
+    /**
+     * The kind of the suggestion in the Completion List
+     */
+    kind?: CompletionItemKind;
 }
 
 export type SuggestResult = Suggestion | string;
@@ -157,6 +162,10 @@ export interface Parser {
      * @returns an array of Suggestions, either strings or a Suggestion objection
      */
     getSuggestions: (text: string, properties: NodeProperties, context?: CommandContext) => SuggestResult[];
+    /**
+     * The kind of the suggestion in the Completion List
+     */
+    kind?: CompletionItemKind;
 }
 
 export interface ParseResult {
