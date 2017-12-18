@@ -1,13 +1,13 @@
-import { JAVAMAXINT, JAVAMININT } from "../consts";
-import { StringReader } from "../string-reader";
-import { CommandSyntaxException, NodeProperties, Parser } from "../types";
+import { JAVAMAXINT, JAVAMININT } from "../../consts";
+import { StringReader } from "../../string-reader";
+import { CommandSyntaxException, NodeProperties, Parser } from "../../types";
 
 const INTEGEREXCEPTIONS = {
     TOOSMALL: new CommandSyntaxException("Integer must not be less than %i, found %i", "argument.integer.low"),
     TOOBIG: new CommandSyntaxException("Integer must not be more than %i, found %i", "argument.integer.big"),
 };
 
-export const integerArgumentParser: Parser = {
+export const parser: Parser = {
     parse: (reader: StringReader, properties: NodeProperties) => {
         const start = reader.cursor;
         const read = reader.readInt();

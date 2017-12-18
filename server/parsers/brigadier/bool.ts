@@ -1,7 +1,7 @@
-import { StringReader } from "../string-reader";
-import { Parser } from "../types";
+import { StringReader } from "../../string-reader";
+import { Parser } from "../../types";
 
-export const boolArgumentParser: Parser = {
+export const parser: Parser = {
     parse: (reader: StringReader) => {
         reader.readBoolean();
     },

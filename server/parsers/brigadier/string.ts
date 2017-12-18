@@ -1,7 +1,7 @@
-import { StringReader } from "../string-reader";
-import { NodeProperties, Parser } from "../types";
+import { StringReader } from "../../string-reader";
+import { NodeProperties, Parser } from "../../types";
 
-export const stringArgumentParser: Parser = {
+export const parser: Parser = {
     parse: (reader: StringReader, properties: NodeProperties) => {
         switch (properties.type) {
             case "greedy":

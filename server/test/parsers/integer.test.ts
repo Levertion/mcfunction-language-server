@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { integerArgumentParser } from "../../parsers/integer";
+import { parser as integerArgumentParser } from "../../parsers/brigadier/integer";
 import { StringReader } from "../../string-reader";
 import { FunctionDiagnostic, NodeProperties } from "../../types";
 

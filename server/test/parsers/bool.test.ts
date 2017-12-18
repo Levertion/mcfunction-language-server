@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { boolArgumentParser } from "../../parsers/bool";
+import { parser as boolArgumentParser } from "../../parsers/brigadier/bool";
 import { StringReader } from "../../string-reader";
 import { NodeProperties } from "../../types";
 

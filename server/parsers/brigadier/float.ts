@@ -1,14 +1,14 @@
 import { isNumber } from "util";
-import { JAVAMAXFLOAT, JAVAMINFLOAT } from "../consts";
-import { StringReader } from "../string-reader";
-import { CommandSyntaxException, NodeProperties, Parser } from "../types";
+import { JAVAMAXFLOAT, JAVAMINFLOAT } from "../../consts";
+import { StringReader } from "../../string-reader";
+import { CommandSyntaxException, NodeProperties, Parser } from "../../types";
 
 const FLOATEXCEPTIONS = {
     TOOSMALL: new CommandSyntaxException("float must not be less than %i, found %i", "argument.float.low"),
     TOOBIG: new CommandSyntaxException("float must not be more than %i, found %i", "argument.float.big"),
 };
 
-export const floatArgumentParser: Parser = {
+export const parser: Parser = {
     parse: (reader: StringReader, properties: NodeProperties) => {
         const start = reader.cursor;
         const read = reader.readFloat();
