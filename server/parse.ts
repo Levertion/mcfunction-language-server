@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import isEqual = require("lodash.isequal");
 import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { ARGUMENTSEPERATOR, COMMENTSTART } from "./consts";
@@ -21,7 +22,7 @@ export interface LinesToParse {
     lines: string[];
     numbers: number[];
 }
-export function parseLines(value: LinesToParse, serverInfo: ServerInformation, connection: IConnection) {
+export function parseLines(value: LinesToParse, serverInfo: ServerInformation, connection: IConnection, listener?: EventEmitter) {
     for (let index = 0; index < value.numbers.length; index++) {
         const text = value.lines[index];
         const lineNo = value.numbers[index];
@@ -33,6 +34,10 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation, c
             const result = parseChildren(serverInfo.tree, reader, [], context);
             info.issue = result.issue;
             info.nodes.push(...result.nodes);
+        }
+        info.parsing = false;
+        if (!!listener) {
+            listener.emit(`${value.uri}${lineNo}`);
         }
     }
     sendDiagnostics(serverInfo, connection, value.uri);

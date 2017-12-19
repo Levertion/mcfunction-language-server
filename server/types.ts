@@ -115,6 +115,7 @@ export interface DocLine {
     nodes: NodeRange[];
     tree?: IntervalTree<NodeRange>;
     text?: string;
+    parsing?: boolean;
 }
 
 export interface FunctionDiagnostic {

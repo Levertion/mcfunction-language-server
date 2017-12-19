@@ -6,12 +6,13 @@
 *-------------------------------------------------------*/
 "use strict";
 
+import { EventEmitter } from "events";
 import { readFileSync } from "fs";
 import { IntervalTree } from "node-interval-tree";
 import { IPCMessageWriter } from "vscode-jsonrpc";
 import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
 import {
-    createConnection, TextDocumentSyncKind,
+    CompletionList, createConnection, TextDocumentSyncKind,
 } from "vscode-languageserver";
 import { getCompletions } from "./complete";
 import { calculateDataFolder } from "./miscUtils";
@@ -28,6 +29,7 @@ connection.listen();
  */
 const serverInfo: ServerInformation = {} as ServerInformation;
 const defaultTreeLocation = require.resolve("../information/commands.json");
+const listener = new EventEmitter();
 // Setup the server.
 connection.onInitialize((params) => {
     if (!!params.rootUri) {
@@ -72,11 +74,11 @@ connection.onDidChangeTextDocument((event) => {
         });
         changedLines.push(...result.tracker);
         // Remove the changed lines, and then refill the new needed ones with empty trees.
-        serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.changedNumber, ...Array(result.tracker.length).fill(0).map<DocLine>(() => ({ nodes: [] })));
+        serverInfo.documentsInformation[uri].lines.splice(result.newLine, result.changedNumber, ...Array(result.tracker.length).fill(0).map<DocLine>(() => ({ nodes: [], parsing: true })));
     }
     // See https://stackoverflow.com/a/14438954. From discussion seems like this is the easiest way.
     changedLines.filter((value, index, self) => self.indexOf(value) === index);
-    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as LinesToParse, serverInfo, connection); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
+    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as LinesToParse, serverInfo, connection, listener); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
 });
 
 connection.onDidOpenTextDocument((params) => {
@@ -86,7 +88,7 @@ connection.onDidOpenTextDocument((params) => {
         lines: new Array(lines.length).fill("").map<DocLine>((_, i) => ({ nodes: [], text: lines[i] })),
         packFolderURI: calculateDataFolder(params.textDocument.uri, serverInfo.workspaceFolder),
     };
-    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo, connection);
+    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo, connection, listener);
 });
 
 connection.onDidCloseTextDocument((params) => {
@@ -122,9 +124,21 @@ connection.onHover((params) => {
 });
 
 connection.onCompletion((params) => {
-    const result = {
-        items: getCompletions(params, serverInfo),
-        isIncomplete: true,
-    };
-    return result;
+    if (!!serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line].parsing) {
+        return new Promise<CompletionList>((resolve) => {
+            listener.once(`${params.textDocument.uri}${params.position.line}`, () => {
+                const result = {
+                    items: getCompletions(params, serverInfo),
+                    isIncomplete: true,
+                };
+                resolve(result);
+            });
+        });
+    } else {
+        const result = {
+            items: getCompletions(params, serverInfo),
+            isIncomplete: true,
+        };
+        return result;
+    }
 });
