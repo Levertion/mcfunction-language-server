@@ -1,7 +1,7 @@
 import * as assert from "assert";
-import { parser as stringArgumentParser } from "../../parsers/brigadier/string";
-import { StringReader } from "../../string-reader";
-import { NodeProperties } from "../../types";
+import { parser as stringArgumentParser } from "../../../parsers/brigadier/string";
+import { StringReader } from "../../../string-reader";
+import { NodeProperties } from "../../../types";
 
 describe("String Argument Parser", () => {
     describe("parse()", () => {
