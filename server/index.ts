@@ -6,6 +6,7 @@
 *-------------------------------------------------------*/
 "use strict";
 
+import { readFileSync } from "fs";
 import { IntervalTree } from "node-interval-tree";
 import { IPCMessageWriter } from "vscode-jsonrpc";
 import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
@@ -26,6 +27,7 @@ connection.listen();
  * Initialised as invalid ServerInfo, but is setup in connection.onInitialise
  */
 const serverInfo: ServerInformation = {} as ServerInformation;
+const defaultTreeLocation = require.resolve("../information/commands.json");
 // Setup the server.
 connection.onInitialize((params) => {
     if (!!params.rootUri) {
@@ -34,43 +36,7 @@ connection.onInitialize((params) => {
     serverInfo.documentsInformation = {};
     // Remove possibility of surplus connection
     serverInfo.logger = (s) => connection.console.log(s);
-    serverInfo.tree = require("../commands.json");
-    /* {
-        type: "root", children: {
-            test: { type: "literal", executable: true },
-            test2: { type: "literal", children: { testChild: { type: "literal", executable: true } } },
-            argtest: {
-                type: "literal", children: {
-                    float: { type: "argument", parser: "brigadier:float", executable: true, properties: { min: 100 } },
-                    int: { type: "argument", parser: "brigadier:integer", executable: true, properties: { min: -10 } },
-                    bool: {
-                        type: "literal", children: {
-                            string: { type: "argument", parser: "brigadier:bool", executable: true },
-                        },
-                    },
-                    greedy: {
-                        type: "literal", children: {
-                            string: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "greedy" } },
-                        },
-                    },
-                    word: {
-                        type: "literal", children: {
-                            string: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "word" } },
-                        },
-                    },
-                    phrase: {
-                        type: "literal", children: {
-                            string: { type: "argument", parser: "brigadier:string", executable: true, properties: { type: "phrase" } },
-                        },
-                    },
-                },
-            },
-            redirect: {
-                type: "literal",
-                redirect: ["argtest"],
-            },
-        },
-    }; */
+    serverInfo.tree = JSON.parse(readFileSync(defaultTreeLocation).toString());
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);
     return {
         capabilities: {
