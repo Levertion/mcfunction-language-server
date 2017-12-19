@@ -8,6 +8,7 @@ const defaultParsers: { [id: string]: string } = {
     "minecraft:swizzle": "./minecraft/swizzle",
     "minecraft:operation": "./minecraft/operation",
     "minecraft:objective": "./minecraft/objective",
+    "minecraft:scoreboard_slot": "./minecraft/scoreboard_slot",
 };
 
 const parserCache: { [id: string]: Parser } = {};
