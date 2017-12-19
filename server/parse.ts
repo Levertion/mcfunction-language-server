@@ -125,30 +125,30 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
     }
     if (!!successful && !issue) {
         if (reader.canRead()) {
-            let nodeToParse;
-            if (!!node.children[successful.key].children) {
-                nodeToParse = node.children[successful.key];
-            } else if (!!node.children[successful.key].redirect) {
-                nodeToParse = getNodeAlongPath(node.children[successful.key].redirect, context.server.tree);
-                newPath = node.children[successful.key].redirect;
-            } else if (isEqual(newPath, ["execute", "run"])) {
-                newPath = [];
-                nodeToParse = context.server.tree;
-            } else {
-                issue = PARSEEXCEPTIONS.NoChildren.create(reader.cursor, reader.string.length, reader.getRemaining());
-            }
-            if (!!nodeToParse) {
-                reader.skip();
-                if (reader.canRead()) {
+            reader.skip();
+            if (reader.canRead()) {
+                let nodeToParse;
+                if (!!node.children[successful.key].children) {
+                    nodeToParse = node.children[successful.key];
+                } else if (!!node.children[successful.key].redirect) {
+                    nodeToParse = getNodeAlongPath(node.children[successful.key].redirect, context.server.tree);
+                    newPath = node.children[successful.key].redirect;
+                } else if (isEqual(newPath, ["execute", "run"])) {
+                    newPath = [];
+                    nodeToParse = context.server.tree;
+                } else {
+                    issue = PARSEEXCEPTIONS.NoChildren.create(reader.cursor - 1, reader.string.length, reader.getRemaining());
+                }
+                if (!!nodeToParse) {
                     const parseResult = parseChildren(nodeToParse, reader, newPath, context);
                     issue = parseResult.issue;
                     nodes.push(...parseResult.nodes);
                 }
+            } else {
+                issue = PARSEEXCEPTIONS.UnexpectedSeperator.create(reader.cursor - 1, reader.cursor);
             }
         } else if (!node.children[successful.key].executable) {
             issue = PARSEEXCEPTIONS.IncompleteCommand.create(0, reader.string.length, reader.string);
-        } else if (reader.peek() === ARGUMENTSEPERATOR) {
-            issue = PARSEEXCEPTIONS.UnexpectedSeperator.create(reader.cursor, reader.cursor + 1);
         }
     } else if (!issue) {
         issue = PARSEEXCEPTIONS.NoSuccesses.create(begin, reader.string.length, reader.getRemaining());
