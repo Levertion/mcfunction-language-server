@@ -9,6 +9,7 @@ const defaultParsers: { [id: string]: string } = {
     "minecraft:operation": "./minecraft/operation",
     "minecraft:objective": "./minecraft/objective",
     "minecraft:scoreboard_slot": "./minecraft/scoreboard_slot",
+    "minecraft:block": "./minecraft/block",
 };
 
 const parserCache: { [id: string]: Parser } = {};

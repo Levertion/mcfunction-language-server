@@ -11,3 +11,11 @@ export const BASECOLORS = ["black", "dark_blue", "dark_green", "dark_aqua", "dar
 export const COLOURSFULL = () => [...BASECOLORS, "reset"];
 export const COMMENTSTART = "#";
 export const dataFolderName = "datapacks";
+export const TAGSTART = "#";
+export const NAMESPACESEPERATOR = ":";
+export const DEFAULTNAMESPACE = "minecraft";
+export const PROPSOPENER = "[";
+export const PROPCLOSER = "]";
+export const PROPDEFINER = "=";
+export const PROPSEPERATOR = ",";
+export const MAXSUGGESTIONS = 100;
