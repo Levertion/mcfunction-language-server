@@ -100,6 +100,15 @@ export class StringReader {
             throw EXCEPTIONS.InvalidInt.create(start, this.cursor, readToTest);
         }
     }
+
+    public readScientific(): number {
+
+        const num = this.readFloat();
+        this.expect("e");
+        const exp = this.readFloat();
+        return num * Math.pow(10, exp);
+    }
+
     /**
      * Read float from the string
      */
@@ -149,6 +158,7 @@ export class StringReader {
             } else if (c === STRINGESCAPE) {
                 escaped = true;
             } else if (c === QUOTE) {
+                this.skip();
                 return result;
             } else {
                 result += c;
