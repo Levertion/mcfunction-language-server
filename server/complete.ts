@@ -45,7 +45,7 @@ export function getCompletions(params: TextDocumentPositionParams, serverInfo: S
                 }
             } else {
                 curTree = serverInfo.tree;
-                context = { executortype: "any", fileUri: params.textDocument.uri, server: serverInfo };
+                context = { executortype: "any", server: serverInfo };
             }
             if (!curTree.children && curTree.redirect) {
                 curTree = getNodeAlongPath(curTree.redirect, serverInfo.tree);

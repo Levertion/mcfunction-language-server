@@ -127,9 +127,8 @@ export interface FunctionDiagnostic {
 
 export interface CommandContext {
     server: ServerInformation;
-    executortype: "any" | "player" | "noplayer";
-    executionTypes?: string[];
-    fileUri: string;
+    executortype: "entity" | "player" | "any";
+    params?: any;
 }
 
 export interface Suggestion {

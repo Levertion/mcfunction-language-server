@@ -28,7 +28,7 @@ export function parseLines(value: LinesToParse, serverInfo: ServerInformation, c
         const info = serverInfo.documentsInformation[value.uri].lines[lineNo];
         info.text = text;
         if (text.length > 0 && !text.startsWith(COMMENTSTART)) {
-            const context: CommandContext = { executortype: "any", fileUri: value.uri, server: serverInfo };
+            const context: CommandContext = { executortype: "any", server: serverInfo };
             const reader = new StringReader(text);
             const result = parseChildren(serverInfo.tree, reader, [], context);
             info.issue = result.issue;
