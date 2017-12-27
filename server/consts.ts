@@ -19,3 +19,7 @@ export const PROPCLOSER = "]";
 export const PROPDEFINER = "=";
 export const PROPSEPERATOR = ",";
 export const MAXSUGGESTIONS = 100;
+export const RELCOORDCHAR = "~";
+export const LOCALCOORDCHAR = "^";
+export const AXESMIN = [-3000000, 0, -3000000];
+export const AXESMAX = [3000000, 256, 3000000];

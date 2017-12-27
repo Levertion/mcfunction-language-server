@@ -6,7 +6,7 @@ const LITERALEXCEPTIONS = {
     IncorrectLiteral: new CommandSyntaxException("Expected literal %s, got %s", "argument.literal.incorrect"),
 };
 
-export const literalArgumentParser: Parser = {
+export const parser: Parser = {
     parse: (reader: StringReader, properties: NodeProperties) => {
         const begin = reader.cursor;
         let index = 0;

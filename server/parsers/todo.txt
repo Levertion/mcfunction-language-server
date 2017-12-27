@@ -1,4 +1,3 @@
-minecraft:block
 minecraft:block_pos
 minecraft:color
 minecraft:component

@@ -44,7 +44,7 @@ function blockParser(reader: StringReader, suggesting: boolean): Suggester | voi
     if (reader.canRead() && reader.peek() === TAGSTART) {
         // Do Tag Stuff
     } else {
-        const block = reader.readUntilRegexp(/[\[]/);
+        const block = reader.readUntilRegexp(/[\[ ]/);
         let blockId;
         const namespaceSepLocation = block.indexOf(NAMESPACESEPERATOR);
         if (namespaceSepLocation === -1) {

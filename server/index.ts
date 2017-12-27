@@ -5,20 +5,20 @@
 * This version under the MIT license as in the project root
 *-------------------------------------------------------*/
 "use strict";
-
 import { EventEmitter } from "events";
 import { readFileSync } from "fs";
 import { IntervalTree } from "node-interval-tree";
 import { IPCMessageWriter } from "vscode-jsonrpc";
 import { IPCMessageReader } from "vscode-jsonrpc/lib/messageReader";
 import {
-    CompletionList, createConnection, TextDocumentSyncKind,
+    CompletionList,
+    createConnection, TextDocumentSyncKind,
 } from "vscode-languageserver";
-import { getCompletions } from "./complete";
+import { buildTree, getCompletions } from "./complete";
 import { calculateDataFolder } from "./miscUtils";
-import { LinesToParse, parseLines } from "./parse";
+import { parseLines, UnparsedLines } from "./parse";
 import { getChangedLines } from "./server-information";
-import { DocLine, NodeRange, ServerInformation } from "./types";
+import { ArgRange, DocLine, ServerInformation } from "./types";
 // Creates the LSP connection
 const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 
@@ -29,15 +29,14 @@ connection.listen();
  */
 const serverInfo: ServerInformation = {} as ServerInformation;
 const defaultTreeLocation = require.resolve("../information/commands.json");
-const listener = new EventEmitter();
+const parseFinishEmitter = new EventEmitter();
 // Setup the server.
 connection.onInitialize((params) => {
     if (!!params.rootUri) {
         serverInfo.workspaceFolder = params.rootUri;
     }
     serverInfo.documentsInformation = {};
-    // Remove possibility of surplus connection
-    serverInfo.logger = (s) => connection.console.log(s);
+    global.mcfunctionLog = (s) => connection.console.log(s);
     serverInfo.tree = JSON.parse(readFileSync(defaultTreeLocation).toString());
     connection.console.log(`[Server(${process.pid}) ${params.rootUri}] Started and initialize received`);
     return {
@@ -78,17 +77,17 @@ connection.onDidChangeTextDocument((event) => {
     }
     // See https://stackoverflow.com/a/14438954. From discussion seems like this is the easiest way.
     changedLines.filter((value, index, self) => self.indexOf(value) === index);
-    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as LinesToParse, serverInfo, connection, listener); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
+    connection.sendRequest("getDocumentLines", event.textDocument, changedLines).then((value) => { if (value) { parseLines(value as UnparsedLines, serverInfo, event.textDocument.uri, connection, parseFinishEmitter); } }, (reason) => { connection.console.log(`Get Document lines rejection reason: ${JSON.stringify(reason)}`); });
 });
 
 connection.onDidOpenTextDocument((params) => {
     connection.console.log("Document Opened");
     const lines = params.textDocument.text.split(/\r?\n/g);
     serverInfo.documentsInformation[params.textDocument.uri] = {
-        lines: new Array(lines.length).fill("").map<DocLine>((_, i) => ({ nodes: [], text: lines[i] })),
-        packFolderURI: calculateDataFolder(params.textDocument.uri, serverInfo.workspaceFolder),
+        lines: new Array(lines.length).fill("").map<DocLine>(() => ({ nodes: [], parsing: true })),
+        defaultContext: { datapackFolder: calculateDataFolder(params.textDocument.uri, serverInfo.workspaceFolder), executionTypes: [], executortype: "any" },
     };
-    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i), uri: params.textDocument.uri }, serverInfo, connection, listener);
+    parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i) }, serverInfo, params.textDocument.uri, connection, parseFinishEmitter);
 });
 
 connection.onDidCloseTextDocument((params) => {
@@ -99,15 +98,8 @@ connection.onDidCloseTextDocument((params) => {
 connection.onHover((params) => {
     if (!!serverInfo.documentsInformation[params.textDocument.uri]) {
         const lineInfo = serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line];
-        let tree: IntervalTree<NodeRange>;
-        if (!!lineInfo.tree) {
-            tree = lineInfo.tree;
-        } else {
-            tree = new IntervalTree<NodeRange>();
-            for (const node of lineInfo.nodes) {
-                tree.insert(node);
-            }
-        }
+        const tree: IntervalTree<ArgRange> = !!lineInfo.tree ? lineInfo.tree : buildTree(lineInfo);
+        lineInfo.tree = tree;
         const matching = tree.search(params.position.character, params.position.character);
         if (matching.length > 0) {
             return {
@@ -124,9 +116,12 @@ connection.onHover((params) => {
 });
 
 connection.onCompletion((params) => {
-    if (!!serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line].parsing) {
+    if (serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line].comment) {
+        return [];
+    }
+    if (serverInfo.documentsInformation[params.textDocument.uri].lines[params.position.line].parsing) {
         return new Promise<CompletionList>((resolve) => {
-            listener.once(`${params.textDocument.uri}${params.position.line}`, () => {
+            parseFinishEmitter.once(`${params.textDocument.uri}${params.position.line}`, () => {
                 const result = {
                     items: getCompletions(params, serverInfo),
                     isIncomplete: true,

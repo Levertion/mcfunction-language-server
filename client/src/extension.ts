@@ -137,7 +137,7 @@ function clientSetup(client: LanguageClient) {
                             client.error(JSON.stringify(e));
                         }
                     }
-                    return { lines: newlines, numbers: changedLines, uri: textDocument.uri };
+                    return { lines: newlines, numbers: changedLines };
                 } else {
                     return null;
                 }

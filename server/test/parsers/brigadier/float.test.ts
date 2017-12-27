@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import { parser as floatArgumentParser } from "../../../parsers/brigadier/float";
 import { StringReader } from "../../../string-reader";
-import { FunctionDiagnostic, NodeProperties } from "../../../types";
+import { CommandIssue, NodeProperties } from "../../../types";
 
 describe("Float Argument Parser", () => {
     describe("parse()", () => {
@@ -16,9 +16,9 @@ describe("Float Argument Parser", () => {
             describe("less than min", () => {
                 const reader = new StringReader(s);
                 const properties: NodeProperties = { key: "test", path: [], min: expectedNum + 1 };
-                let e: FunctionDiagnostic;
+                let e: CommandIssue;
                 it("should throw an error", () => {
-                    assert.throws(() => { floatArgumentParser.parse(reader, properties); }, (error: FunctionDiagnostic) => { e = error; return true; });
+                    assert.throws(() => { floatArgumentParser.parse(reader, properties); }, (error: CommandIssue) => { e = error; return true; });
                 });
                 it("should throw an float too low error", () => {
                     assert.equal(e.type, "argument.float.low");
@@ -33,9 +33,9 @@ describe("Float Argument Parser", () => {
             describe("more than max", () => {
                 const reader = new StringReader(s);
                 const properties: NodeProperties = { key: "test", path: [], max: expectedNum - 1 };
-                let e: FunctionDiagnostic;
+                let e: CommandIssue;
                 it("should throw an error", () => {
-                    assert.throws(() => { floatArgumentParser.parse(reader, properties); }, (error: FunctionDiagnostic) => { e = error; return true; });
+                    assert.throws(() => { floatArgumentParser.parse(reader, properties); }, (error: CommandIssue) => { e = error; return true; });
                 });
                 it("should throw an float too big error", () => {
                     assert.equal(e.type, "argument.float.big");
@@ -66,7 +66,7 @@ describe("Float Argument Parser", () => {
             it("should throw an float too big error", () => {
                 assert.throws(() => {
                     floatArgumentParser.parse(reader, properties);
-                }, (error: FunctionDiagnostic) => {
+                }, (error: CommandIssue) => {
                     if (error.type === "argument.float.big") {
                         return true;
                     }
@@ -80,7 +80,7 @@ describe("Float Argument Parser", () => {
             it("should throw an float too big error", () => {
                 assert.throws(() => {
                     floatArgumentParser.parse(reader, properties);
-                }, (error: FunctionDiagnostic) => {
+                }, (error: CommandIssue) => {
                     if (error.type === "argument.float.low") {
                         return true;
                     }
