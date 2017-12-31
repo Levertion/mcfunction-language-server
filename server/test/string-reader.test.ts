@@ -215,6 +215,16 @@ describe("string-reader", () => {
             assert.equal(reader.cursor, 0);
         });
     });
+    describe("readScientific()", () => {
+        it("should return the correct number", () => {
+            const reader = new StringReader("10.12e2");
+            assert.equal(reader.readScientific(), 1012);
+        });
+        it("should throw if the exponent is a float", () => {
+            const reader = new StringReader("10.12e2.1");
+            assert.throws(() => reader.readScientific());
+        });
+    });
     describe("readInt()", () => {
         [1, 2, 3, 4, 5].forEach((val: number) => {
             it(`should read a ${val} character long integer`, () => {

@@ -66,21 +66,19 @@ export interface NodeProperties extends GivenProperties {
 /**
  * A description of an area of a node.
  */
-export interface NodeRange extends Interval {
+export interface ArgRange extends Interval {
+    /**
+     * The path to the node in the command tree.
+     */
+    path: NodePath;
     /**
      * The name of the node in the tree.
      */
     key: string;
     /**
-     * The path to the node in the command tree.
-     * Used so that properties can be accessed
+     * The context of this command
      */
-    path?: NodePath;
-    /**
-     * The context of this node.  
-     * A new copy is created whenever
-     */
-    context?: CommandContext;
+    context: CommandContext;
 }
 
 /**
@@ -99,35 +97,34 @@ export interface ServerInformation {
      * The command tree
      */
     tree: CommandNode & { type: "root" };
-    /**
-     * The connection to the client.  
-     * This is mostly to be used to allowing console logging for debugging
-     */
-    logger: (message: string) => void;
 }
 
 export interface DocumentInformation {
     lines: DocLine[];
-    packFolderURI: string;
+    defaultContext?: CommandContext;
 }
 export interface DocLine {
-    issue?: FunctionDiagnostic;
-    nodes: NodeRange[];
-    tree?: IntervalTree<NodeRange>;
+    issue?: CommandIssue;
+    nodes: ArgRange[];
     text?: string;
+    parsing?: boolean;
+    comment?: boolean;
+    tree?: IntervalTree<ArgRange>;
 }
 
-export interface FunctionDiagnostic {
+export interface CommandIssue {
     type: string;
     message: string;
     severity: DiagnosticSeverity;
     start: number;
     end: number;
+    data: any;
 }
 
 export interface CommandContext {
-    server: ServerInformation;
-    executortype: "entity" | "player" | "any";
+    executortype: "any" | "player" | "noplayer";
+    executionTypes?: string[];
+    datapackFolder: string;
     params?: any;
 }
 
@@ -153,7 +150,7 @@ export type SuggestResult = Suggestion | string;
 export interface Parser {
     /**
      * Parse the argument as described in NodeProperties against this parser in the reader.  
-     * The context is optional for the literal and for tests
+     * The context is optional for tests
      */
     parse: (reader: StringReader, properties: NodeProperties, context?: CommandContext) => void;
     /**
@@ -168,25 +165,31 @@ export interface Parser {
 }
 
 export interface ParseResult {
-    nodes?: NodeRange[];
-    issue?: FunctionDiagnostic;
+    nodes?: ArgRange[];
+    issue?: CommandIssue;
 }
 
 export class CommandSyntaxException {
     private description: string;
     private type: string;
     private severity: DiagnosticSeverity;
-    constructor(description: string, type: string, severity?: DiagnosticSeverity) {
+    private data: any;
+    constructor(description: string, type: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error, data?: any) {
         this.description = description;
         this.type = type;
-        this.severity = severity || DiagnosticSeverity.Error;
+        this.severity = severity;
+        this.data = data;
     }
-    public create(start: number, end: number, ...formatting: any[]): FunctionDiagnostic {
-        const diagnosis: FunctionDiagnostic = { severity: this.severity } as FunctionDiagnostic;
+    public create(start: number, end: number, ...formatting: any[]): CommandIssue {
+        return this.createWithData(start, end, {}, formatting);
+    }
+    public createWithData(start: number, end: number, data?: any, ...formatting: any[]): CommandIssue {
+        const diagnosis: CommandIssue = { severity: this.severity } as CommandIssue;
         diagnosis.end = end;
         diagnosis.start = start;
         diagnosis.message = format(this.description, ...formatting);
         diagnosis.type = this.type;
+        diagnosis.data = Object.assign(data, this.data);
         return diagnosis;
     }
 }

@@ -1,7 +1,7 @@
 import * as assert from "assert";
-import { parser as boolArgumentParser } from "../../parsers/brigadier/bool";
-import { StringReader } from "../../string-reader";
-import { NodeProperties } from "../../types";
+import { parser as boolArgumentParser } from "../../../parsers/brigadier/bool";
+import { StringReader } from "../../../string-reader";
+import { NodeProperties } from "../../../types";
 
 describe("Boolean Argument Parser", () => {
     const properties: NodeProperties = { key: "test", path: [] };

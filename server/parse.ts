@@ -1,160 +1,153 @@
-import isEqual = require("lodash.isequal");
+import { EventEmitter } from "events";
 import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { ARGUMENTSEPERATOR, COMMENTSTART } from "./consts";
-import { getNodeAlongPath, toDiagnostic } from "./miscUtils";
-import { getParser } from "./parsers/getParsers";
-import { literalArgumentParser } from "./parsers/literal";
+import { getParentOfChildren, toDiagnostic } from "./miscUtils";
+import { getParser } from "./parsers/getParser";
 import { StringReader } from "./string-reader";
-import { CommandContext, CommandNode, CommandSyntaxException, FunctionDiagnostic, NodePath, NodeProperties, NodeRange, ParseResult, ServerInformation } from "./types";
+import { ArgRange, CommandContext, CommandIssue, CommandNode, CommandSyntaxException, DocLine, GivenProperties, NodePath, NodeProperties, ServerInformation } from "./types";
 
-const PARSEEXCEPTIONS = {
-    NoChildren: new CommandSyntaxException("The node has no children but there are more characters following it", "command.parsing.childless"),
-    MissingArgSep: new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.whitespace"),
-    IncompleteCommand: new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete", DiagnosticSeverity.Warning),
-    NoSuccesses: new CommandSyntaxException("No nodes which matched '%s' found", "command.parsing.matchless"),
-    UnexpectedSeperator: new CommandSyntaxException(`Unexpected trailing argument seperator '${ARGUMENTSEPERATOR}'`, "command.parsing.trailing", DiagnosticSeverity.Warning),
-};
+interface ArgResult {
+    issue?: CommandIssue;
+    successful: boolean;
+}
 
-// Exported only to allow assertion of a lines to parse in the "getDocumentLines" callback, which normally has an any type
-export interface LinesToParse {
-    uri: string;
+export interface UnparsedLines {
     lines: string[];
     numbers: number[];
 }
-export function parseLines(value: LinesToParse, serverInfo: ServerInformation, connection: IConnection) {
-    for (let index = 0; index < value.numbers.length; index++) {
-        const text = value.lines[index];
-        const lineNo = value.numbers[index];
-        const info = serverInfo.documentsInformation[value.uri].lines[lineNo];
-        info.text = text;
-        if (text.length > 0 && !text.startsWith(COMMENTSTART)) {
-            const context: CommandContext = { executortype: "any", server: serverInfo };
-            const reader = new StringReader(text);
-            const result = parseChildren(serverInfo.tree, reader, [], context);
-            info.issue = result.issue;
-            info.nodes.push(...result.nodes);
+
+export function parseLines(lines: UnparsedLines, server: ServerInformation, uri: string, connection: IConnection, listener: EventEmitter) {
+    for (let i = 0; i < lines.numbers.length; i++) {
+        const command = lines.lines[i];
+        const lineNo = lines.numbers[i];
+        const docInfo = server.documentsInformation[uri];
+        const docLines = docInfo.lines;
+        if (command.length > 0) {
+            if (!command.startsWith(COMMENTSTART)) {
+                docLines[lineNo] = parse(command, server.tree, server.documentsInformation[uri].defaultContext.datapackFolder);
+            } else {
+                docLines[lineNo].comment = true;
+                docLines[lineNo].parsing = false;
+            }
+        } else {
+            docLines[lineNo].text = command;
+            docLines[lineNo].parsing = false;
         }
+        listener.emit(`${uri}${lineNo}`);
     }
-    sendDiagnostics(serverInfo, connection, value.uri);
+    sendDiagnostics(server, connection, uri);
 }
 
 function sendDiagnostics(serverInfo: ServerInformation, connection: IConnection, uri: string) {
     const diagnostics: Diagnostic[] = [];
     for (let i = 0; i < serverInfo.documentsInformation[uri].lines.length; i++) {
-        const diagnostic = serverInfo.documentsInformation[uri].lines[i];
-        if (diagnostic.issue) {
-            diagnostics.push(toDiagnostic(diagnostic.issue, i));
+        const line = serverInfo.documentsInformation[uri].lines[i];
+        if (line.issue) {
+            diagnostics.push(toDiagnostic(line.issue, i));
         }
     }
     connection.sendDiagnostics({ uri, diagnostics });
 }
 
-function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, context: CommandContext): ParseResult {
-    const begin = reader.cursor;
-    const nodes: NodeRange[] = [];
-    let successful: NodeRange;
-    let newPath: NodePath;
-    let issue: FunctionDiagnostic;
-    child_loop:
-    for (const childKey in node.children) {
-        if (node.children.hasOwnProperty(childKey)) {
-            const child = node.children[childKey];
-            const childProperties: NodeProperties = (child.properties || {}) as NodeProperties;
-            newPath = path.slice(); // Clone old to new - https://stackoverflow.com/a/7486130
-            newPath.push(childKey);
-            childProperties.key = childKey;
-            childProperties.path = newPath;
-            switch (child.type) {
-                case "literal":
-                    const beforeParse = reader.cursor;
-                    reader.cursor = begin;
-                    try {
-                        literalArgumentParser.parse(reader, childProperties);
-                        if (reader.peek() !== ARGUMENTSEPERATOR && reader.canRead()) {
-                            // This is to avoid repetition.
-                            throw {};
-                        }
-                        successful = { key: childKey, high: reader.cursor, path: newPath, low: begin };
-                        issue = null;
-                        break child_loop;
-                    } catch (error) {
-                        reader.cursor = beforeParse;
-                    }
-                    break;
-                case "argument":
-                    if (!successful) {
-                        const oldContext = context;
-                        // Deep clone.
-                        const newContext = JSON.parse(JSON.stringify(context, (k, v) => {
-                            if (k !== "server") {
-                                return v;
-                            }
-                            return;
-                        }));
-                        const parser = getParser(child.parser, context.server);
-                        if (!parser) {
-                            continue;
-                        }
-                        try {
-                            parser.parse(reader, childProperties, newContext);
-                            if (reader.peek() === ARGUMENTSEPERATOR || !reader.canRead()) {
-                                issue = null;
-                                if (isEqual(newContext, oldContext)) {
-                                    context = newContext;
-                                    context.server = oldContext.server;
-                                }
-                                if (!reader.canRead()) {
-                                    successful = { key: childKey, high: reader.cursor + 1, path: newPath, low: begin, context };
-                                } else {
-                                    successful = { key: childKey, high: reader.cursor, path: newPath, low: begin, context };
-                                }
-                            } else {
-                                throw PARSEEXCEPTIONS.MissingArgSep.create(reader.cursor, reader.string.length, reader.string.substring(reader.cursor));
-                            }
-                        } catch (error) {
-                            reader.cursor = begin;
-                            issue = error;
-                        }
-                    }
-                    break;
-                default:
-                    // Mangled input. Easiest to leave for the moment
-                    break;
-            }
-        }
-    }
-    if (!!successful && !issue) {
+function parse(command: string, tree: CommandNode, datapackFolder: string): DocLine {
+    const nodes: ArgRange[] = [];
+    const reader = new StringReader(command);
+    const context: CommandContext = { datapackFolder, executortype: "any", executionTypes: [] };
+    const issue = parseNodeFollows(tree, reader, [], context, nodes, tree);
+    return { text: command, issue, nodes };
+}
+
+function parseNodeFollows(node: CommandNode, reader: StringReader, path: NodePath, context: CommandContext, nodes: ArgRange[], tree: CommandNode): CommandIssue {
+    const toParse = getParentOfChildren(path, tree);
+    let issue: CommandIssue;
+    if (toParse === false) {
         if (reader.canRead()) {
-            let nodeToParse;
-            if (!!node.children[successful.key].children) {
-                nodeToParse = node.children[successful.key];
-            } else if (!!node.children[successful.key].redirect) {
-                nodeToParse = getNodeAlongPath(node.children[successful.key].redirect, context.server.tree);
-                newPath = node.children[successful.key].redirect;
-            } else if (isEqual(newPath, ["execute", "run"])) {
-                newPath = [];
-                nodeToParse = context.server.tree;
-            } else {
-                issue = PARSEEXCEPTIONS.NoChildren.create(reader.cursor, reader.string.length, reader.getRemaining());
+            issue = parseIssues.ExtraArgs.create(reader.cursor, reader.string.length, reader.getRemaining());
+        }
+        return issue;
+    }
+    const result = parseChildren(toParse[0], reader, toParse[1], context);
+    if (!!result.successful) {
+        reader.skip();
+        nodes.push(result.successful);
+        if (reader.canRead()) {
+            issue = parseNodeFollows(toParse[0].children[result.successful.key], reader, result.successful.path, context, nodes, tree);
+        } else if (!issue) {
+            if (!node.executable) {
+                issue = parseIssues.IncompleteCommand.create(0, reader.cursor, reader.getRead());
             }
-            if (!!nodeToParse) {
-                reader.skip();
-                if (reader.canRead()) {
-                    const parseResult = parseChildren(nodeToParse, reader, newPath, context);
-                    issue = parseResult.issue;
-                    nodes.push(...parseResult.nodes);
-                }
+            if (reader.peek(-1) === ARGUMENTSEPERATOR) {
+                issue = parseIssues.UnexpectedSeperator.create(reader.cursor, reader.cursor - 1);
             }
-        } else if (!node.children[successful.key].executable) {
-            issue = PARSEEXCEPTIONS.IncompleteCommand.create(0, reader.string.length, reader.string);
-        } else if (reader.peek() === ARGUMENTSEPERATOR) {
-            issue = PARSEEXCEPTIONS.UnexpectedSeperator.create(reader.cursor, reader.cursor + 1);
         }
     } else if (!issue) {
-        issue = PARSEEXCEPTIONS.NoSuccesses.create(begin, reader.string.length, reader.getRemaining());
+        if (!!result.issue) {
+            issue = result.issue;
+        } else {
+            issue = parseIssues.NoSuccesses.create(reader.cursor, reader.string.length, reader.getRemaining());
+        }
+    }
+    return issue;
+}
+
+function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, context: CommandContext) {
+    let successful: ArgRange;
+    let issue: CommandIssue;
+    for (const childName of Object.keys(node.children)) {
+        const begin = reader.cursor;
+        const child = node.children[childName];
+        const newPath: NodePath = Array(...path, childName);
+        const props: NodeProperties = Object.assign<GivenProperties, NodeProperties>((child.properties || {}), { key: childName, path: newPath });
+        const newContext = JSON.parse(JSON.stringify(context));
+        const result = parseArgument(child, reader, props, newContext);
+        if (result.successful) {
+            if (reader.peek() !== ARGUMENTSEPERATOR && reader.canRead()) {
+                if (!issue && !successful) {
+                    issue = parseIssues.MissingArgSep.create(reader.cursor, reader.cursor + 1, reader.string.substring(reader.cursor));
+                }
+                reader.cursor = begin;
+                continue;
+            } else {
+                issue = null;
+                successful = { path: newPath, low: begin, high: reader.cursor, key: childName, context: newContext };
+                context = newContext;
+                reader.cursor = begin;
+                if (child.type === "literal") {
+                    break; // Prioritise matching literals over other arguments
+                }
+            }
+        } else {
+            if (child.type !== "literal") {
+                issue = result.issue; // Don't give invalid literal issues.
+            }
+            reader.cursor = begin;
+        }
     }
     if (!!successful) {
-        nodes.push(successful);
+        reader.cursor = successful.high;
     }
-    return { nodes, issue };
+    return { successful, issue };
 }
+
+function parseArgument(node: CommandNode, reader: StringReader, nodeProps: NodeProperties, argumentContext: CommandContext,
+    // server: ServerInformation
+): ArgResult {
+    const parser = getParser(node);
+    if (!!parser) {
+        try {
+            parser.parse(reader, nodeProps, argumentContext);
+            return { successful: true };
+        } catch (e) {
+            return { issue: e, successful: false };
+        }
+    }
+    return { successful: false };
+}
+
+const parseIssues = {
+    MissingArgSep: new CommandSyntaxException("Expected whitespace: got %s", "command.parsing.seperator.missing"),
+    ExtraArgs: new CommandSyntaxException("There are extra arguments for the command: %s", "command.parsing.extra"),
+    NoSuccesses: new CommandSyntaxException("No nodes which matched '%s' found", "command.parsing.matchless"),
+    IncompleteCommand: new CommandSyntaxException("The command %s is not a commmand which can be run", "command.parsing.incomplete", DiagnosticSeverity.Warning),
+    UnexpectedSeperator: new CommandSyntaxException(`Unexpected trailing argument seperator '${ARGUMENTSEPERATOR}'`, "command.parsing.trailing", DiagnosticSeverity.Warning),
+};

@@ -1,7 +1,9 @@
+import isEqual = require("lodash.isequal");
 import * as path from "path";
 import { Diagnostic } from "vscode-languageserver/lib/main";
 import { dataFolderName } from "./consts";
-import { CommandNode, FunctionDiagnostic, NodePath } from "./types";
+import { CommandIssue, CommandNode, NodePath } from "./types";
+
 /**
  * Find the datapack a file is in.
  * @param uri The URI of the file
@@ -34,9 +36,22 @@ export function getNodeAlongPath(nodePath: NodePath, tree: CommandNode): Command
  * @param diagnosis The functionDiagnostic to convert
  * @param line The line number that the diagnostic is one
  */
-export function toDiagnostic(diagnosis: FunctionDiagnostic, line: number): Diagnostic {
+export function toDiagnostic(diagnosis: CommandIssue, line: number): Diagnostic {
     return Diagnostic.create({
         start: { line, character: diagnosis.start },
         end: { line, character: diagnosis.end },
     }, diagnosis.message, diagnosis.severity, diagnosis.type, "mcfunction");
+}
+
+export function getParentOfChildren(nodePath: NodePath, tree: CommandNode): [CommandNode, NodePath] | false {
+    const node = getNodeAlongPath(nodePath, tree);
+    if (!!node.children) {
+        return [node, nodePath];
+    } else if (!!node.redirect) {
+        return [getNodeAlongPath(node.redirect, tree), node.redirect];
+    } else if (isEqual(nodePath, ["execute", "run"])) {
+        return [tree, []];
+    } else {
+        return false;
+    }
 }

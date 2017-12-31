@@ -6,7 +6,20 @@ export const QUOTE = "\"";
 export const STRINGESCAPE = "\\";
 export const ARGUMENTSEPERATOR = " ";
 export const AXES = ["x", "y", "z"];
-export const COLORS = ["black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple",
-    "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white", "reset"];
+export const BASECOLORS = ["black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple",
+    "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white"];
+export const COLOURSFULL = () => [...BASECOLORS, "reset"];
 export const COMMENTSTART = "#";
 export const dataFolderName = "datapacks";
+export const TAGSTART = "#";
+export const NAMESPACESEPERATOR = ":";
+export const DEFAULTNAMESPACE = "minecraft";
+export const PROPSOPENER = "[";
+export const PROPCLOSER = "]";
+export const PROPDEFINER = "=";
+export const PROPSEPERATOR = ",";
+export const MAXSUGGESTIONS = 100;
+export const RELCOORDCHAR = "~";
+export const LOCALCOORDCHAR = "^";
+export const AXESMIN = [-3000000, 0, -3000000];
+export const AXESMAX = [3000000, 256, 3000000];
