@@ -1,7 +1,7 @@
 import * as assert from "assert";
-import { literalArgumentParser } from "../../parsers/literal";
+import { parser as literalArgumentParser } from "../../parsers/literal";
 import { StringReader } from "../../string-reader";
-import { FunctionDiagnostic, NodeProperties } from "../../types";
+import { CommandIssue, NodeProperties } from "../../types";
 
 describe("literalArgumentParser", () => {
     const properties: NodeProperties = { key: "test", path: [] };
@@ -25,7 +25,7 @@ describe("literalArgumentParser", () => {
         describe("literal not matching", () => {
             it("should throw an error when the first character doesn't mathc", () => {
                 const reader = new StringReader("nottest");
-                assert.throws(() => { literalArgumentParser.parse(reader, properties); }, (e: FunctionDiagnostic) => {
+                assert.throws(() => { literalArgumentParser.parse(reader, properties); }, (e: CommandIssue) => {
                     assert.equal(e.start, 0);
                     assert.equal(e.end, 1);
                     return true;
@@ -33,7 +33,7 @@ describe("literalArgumentParser", () => {
             });
             it("should throw an error when the last character doesn't match", () => {
                 const reader = new StringReader("tesnot");
-                assert.throws(() => { literalArgumentParser.parse(reader, properties); }, (e: FunctionDiagnostic) => {
+                assert.throws(() => { literalArgumentParser.parse(reader, properties); }, (e: CommandIssue) => {
                     assert.equal(e.start, 0);
                     assert.equal(e.end, 4);
                     return true;

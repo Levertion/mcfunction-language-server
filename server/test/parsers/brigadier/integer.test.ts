@@ -1,7 +1,7 @@
 import * as assert from "assert";
-import { parser as integerArgumentParser } from "../../parsers/brigadier/integer";
-import { StringReader } from "../../string-reader";
-import { FunctionDiagnostic, NodeProperties } from "../../types";
+import { parser as integerArgumentParser } from "../../../parsers/brigadier/integer";
+import { StringReader } from "../../../string-reader";
+import { CommandIssue, NodeProperties } from "../../../types";
 
 describe("Integer Argument Parser", () => {
     describe("parse", () => {
@@ -16,9 +16,9 @@ describe("Integer Argument Parser", () => {
             describe("less than min", () => {
                 const reader = new StringReader(s);
                 const properties: NodeProperties = { key: "test", path: [], min: expectedNum + 1 };
-                let e: FunctionDiagnostic;
+                let e: CommandIssue;
                 it("should throw an error", () => {
-                    assert.throws(() => { integerArgumentParser.parse(reader, properties); }, (error: FunctionDiagnostic) => { e = error; return true; });
+                    assert.throws(() => { integerArgumentParser.parse(reader, properties); }, (error: CommandIssue) => { e = error; return true; });
                 });
                 it("should throw an integer too low error", () => {
                     assert.equal(e.type, "argument.integer.low");
@@ -33,9 +33,9 @@ describe("Integer Argument Parser", () => {
             describe("more than max", () => {
                 const reader = new StringReader(s);
                 const properties: NodeProperties = { key: "test", path: [], max: expectedNum - 1 };
-                let e: FunctionDiagnostic;
+                let e: CommandIssue;
                 it("should throw an error", () => {
-                    assert.throws(() => { integerArgumentParser.parse(reader, properties); }, (error: FunctionDiagnostic) => { e = error; return true; });
+                    assert.throws(() => { integerArgumentParser.parse(reader, properties); }, (error: CommandIssue) => { e = error; return true; });
                 });
                 it("should throw an integer too big error", () => {
                     assert.equal(e.type, "argument.integer.big");
@@ -60,7 +60,7 @@ describe("Integer Argument Parser", () => {
             it("should throw an integer too big error", () => {
                 assert.throws(() => {
                     integerArgumentParser.parse(reader, properties);
-                }, (error: FunctionDiagnostic) => {
+                }, (error: CommandIssue) => {
                     if (error.type === "argument.integer.big") {
                         return true;
                     }
@@ -74,7 +74,7 @@ describe("Integer Argument Parser", () => {
             it("should throw an integer too big error", () => {
                 assert.throws(() => {
                     integerArgumentParser.parse(reader, properties);
-                }, (error: FunctionDiagnostic) => {
+                }, (error: CommandIssue) => {
                     if (error.type === "argument.integer.low") {
                         return true;
                     }

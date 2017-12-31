@@ -2,7 +2,7 @@ import fs = require("fs");
 import Path = require("path");
 import Url = require("url");
 import { StringReader } from "../../string-reader";
-import { CommandContext, CommandSyntaxException, FunctionDiagnostic, NodeProperties, Parser } from "../../types";
+import { CommandContext, CommandIssue, CommandSyntaxException, NodeProperties, Parser } from "../../types";
 
 const nbtPath = Path.resolve(__dirname, "../../node_modules/mc-nbt-paths/root.json");
 
@@ -270,7 +270,7 @@ interface ParserReturn {
 }
 
 export const parseValue = (reader: StringReader): ParserReturn => {
-    let lastErr: FunctionDiagnostic;
+    let lastErr: CommandIssue;
     for (const e of parserFunc) {
         const start = reader.cursor;
         try {
