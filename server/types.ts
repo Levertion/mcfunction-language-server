@@ -123,6 +123,7 @@ export interface FunctionDiagnostic {
     severity: DiagnosticSeverity;
     start: number;
     end: number;
+    data: any;
 }
 
 export interface CommandContext {
@@ -176,17 +177,23 @@ export class CommandSyntaxException {
     private description: string;
     private type: string;
     private severity: DiagnosticSeverity;
-    constructor(description: string, type: string, severity?: DiagnosticSeverity) {
+    private data: any;
+    constructor(description: string, type: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error, data?: any) {
         this.description = description;
         this.type = type;
-        this.severity = severity || DiagnosticSeverity.Error;
+        this.severity = severity;
+        this.data = data;
     }
     public create(start: number, end: number, ...formatting: any[]): FunctionDiagnostic {
+        return this.createWithData(start, end, {}, formatting);
+    }
+    public createWithData(start: number, end: number, data?: any, ...formatting: any[]): FunctionDiagnostic {
         const diagnosis: FunctionDiagnostic = { severity: this.severity } as FunctionDiagnostic;
         diagnosis.end = end;
         diagnosis.start = start;
         diagnosis.message = format(this.description, ...formatting);
         diagnosis.type = this.type;
+        diagnosis.data = Object.assign(data, this.data);
         return diagnosis;
     }
 }
