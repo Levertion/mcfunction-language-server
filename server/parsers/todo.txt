@@ -7,7 +7,6 @@ minecraft:item
 minecraft:item_slot
 minecraft:message
 minecraft:mob_effect
-minecraft:nbt
 minecraft:nbt_path
 minecraft:objective_criteria
 minecraft:particle

@@ -16,6 +16,7 @@ const EXCEPTIONS = {
     ExpectedBool: new CommandSyntaxException("A boolean value was expected but null was found instead", "parsing.bool.expected"),
     InvalidBool: new CommandSyntaxException("Invalid boolean, expected 'true' or 'false', got '%s'", "parsing.bool.invalid"),
     ExpectedSymbol: new CommandSyntaxException("Expected %s, got %s", "parsing.expected"),
+    ExpectedUnquotedStart: new CommandSyntaxException("Unquoted strings cannot start with %s", "parsing.string.unquoted.badstart"),
 };
 export class StringReader {
     public readonly string: string;
@@ -100,6 +101,14 @@ export class StringReader {
             throw EXCEPTIONS.InvalidInt.create(start, this.cursor, readToTest);
         }
     }
+
+    public readScientific(): number {
+        const num = this.readFloat();
+        this.regExpect(/e|E/);
+        const exp = this.readInt();
+        return Number(num.toString() + "E" + exp.toString());
+    }
+
     /**
      * Read float from the string
      */
@@ -119,7 +128,10 @@ export class StringReader {
      * The cursor ends on the first character after the string allowed characters  
      * Result can have zero length, meaning no matches
      */
-    public readUnquotedString(): string {
+    public readUnquotedString(strictStart: boolean = false): string {
+        if (strictStart && !/[A-Za-z_]/.test(this.peek())) {
+            throw EXCEPTIONS.ExpectedUnquotedStart.create(this.cursor, this.cursor);
+        }
         return this.readWhileRegexp(/^[0-9A-Za-z_\-.+]$/);
     }
     /**
@@ -149,6 +161,7 @@ export class StringReader {
             } else if (c === STRINGESCAPE) {
                 escaped = true;
             } else if (c === QUOTE) {
+                this.skip();
                 return result;
             } else {
                 result += c;
@@ -160,11 +173,11 @@ export class StringReader {
      * Read a string from the string. If it surrounded by quotes, the quotes are ignored.  
      * The cursor ends on the last character in the string.
      */
-    public readString(): string {
+    public readString(strictStart: boolean = false): string {
         if (this.canRead() && this.peek() === QUOTE) {
             return this.readQuotedString();
         } else {
-            return this.readUnquotedString();
+            return this.readUnquotedString(strictStart);
         }
     }
     /**
@@ -189,9 +202,18 @@ export class StringReader {
      * Check if a character follows.
      * @param c The character which should come next
      */
-    public expect(c: string) {
+    public expect(c: string, data: any = {}) {
         if (this.peek() !== c) {
-            throw EXCEPTIONS.ExpectedSymbol.create(this.cursor, this.cursor, this.peek(), c);
+            throw EXCEPTIONS.ExpectedSymbol.createWithData(this.cursor, this.cursor, data, this.peek(), c);
+        }
+        if (this.canRead()) {
+            this.skip();
+        }
+    }
+
+    public regExpect(r: RegExp, data: any = {}) {
+        if (!r.test(this.peek())) {
+            throw EXCEPTIONS.ExpectedSymbol.createWithData(this.cursor, this.cursor, data, this.peek(), r);
         }
         if (this.canRead()) {
             this.skip();
