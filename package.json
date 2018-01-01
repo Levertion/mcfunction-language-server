@@ -7,9 +7,9 @@
         "@types/assert": "0.0.31",
         "@types/js-combinatorics": "^0.5.29",
         "@types/lodash.isequal": "^4.5.2",
-        "@types/mocha": "^2.2.44",
-        "@types/node": "^8.0.53",
-        "mocha": "^4.0.1",
+        "@types/mocha": "^2.2.45",
+        "@types/node": "^8.5.2",
+        "mocha": "^4.1.0",
         "tslint": "^5.8.0",
         "typescript": "^2.6.2"
     },
@@ -24,6 +24,7 @@
         "compile:client": "tsc -p ./client/tsconfig.json",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
         "test": "npm run test:server",
-        "test:server": "npm run compile:server && node ./node_modules/mocha/bin/_mocha -u tdd --timeout 999999 --colors ./client/server/test/**/*.js"
+        "test:server": "npm run compile:server && node ./node_modules/mocha/bin/_mocha -u tdd --timeout 999999 --colors -spec './client/server/test/**/*.js'",
+        "update": "npm update && cd client && npm update && cd ../server && npm update && cd.."
     }
 }
