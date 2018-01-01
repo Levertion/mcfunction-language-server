@@ -23,7 +23,7 @@
         "compile:server": "cd server && npm run installServer && cd .. && tsc -p server/tsconfig.json",
         "compile:client": "tsc -p ./client/tsconfig.json",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-        "test": "npm install && npm run test:server",
+        "test": "npm run test:server",
         "test:server": "npm run compile:server && node ./node_modules/mocha/bin/_mocha -u tdd --timeout 999999 --colors ./client/server/test/**/*.js"
     }
 }
