@@ -1,4 +1,5 @@
-## Minecraft LSP implementation  
+## Minecraft LSP implementation  [![Build Status](https://travis-ci.org/Levertion/mcfunction-language-server.svg?branch=master)](https://travis-ci.org/Levertion/mcfunction-language-server)  
+
 This is an implementation of the [language server protocol](https://langserver.org/) for Minecraft Functions.   
 Additionally, the default configuration comes with a Visual Studio Code extension which manages this.
 

@@ -3,13 +3,13 @@ import { platform } from "os";
 import { calculateDataFolder, getNodeAlongPath, getParentOfChildren } from "../miscUtils";
 
 describe("calculateDataFolder()", () => {
-    it("should find the datapack folder of a string on linux", function () {
+    it("should find the datapack folder of a string on linux", function() {
         if (platform() !== "linux") {
             this.skip();
         }
         assert.equal(calculateDataFolder("/home/user/minecraft/datapacks/hello/filename.txt"), "/home/user/minecraft/datapacks/");
     });
-    it("should find the datapack folder of a string on windows", function () {
+    it("should find the datapack folder of a string on windows", function() {
         if (platform() !== "win32") {
             this.skip();
         }
@@ -18,13 +18,13 @@ describe("calculateDataFolder()", () => {
     /**
      * The following tests are only supported on Windows Operating Systems, as that is what I use for development
      */
-    it("should return the default when there is no datapack folder", function () {
+    it("should return the default when there is no datapack folder", function() {
         if (platform() !== "win32") {
             this.skip();
         }
         assert.equal(calculateDataFolder("C:\\Users\\user\\", "C:\\Test\\Default\\"), "C:\\Test\\Default\\");
     });
-    it("should not detect a non-datapacks folder", function () {
+    it("should not detect a non-datapacks folder", function() {
         if (platform() !== "win32") {
             this.skip();
         }

@@ -49,7 +49,7 @@ function sendDiagnostics(serverInfo: ServerInformation, connection: IConnection,
     connection.sendDiagnostics({ uri, diagnostics });
 }
 
-function parse(command: string, tree: CommandNode, datapackFolder: string): DocLine {
+function parse(command: string, tree: CommandNode, datapacksFolder: string): DocLine {
     const nodes: ArgRange[] = [];
     const reader = new StringReader(command);
     const context: CommandContext = { datapacksFolder, executortype: "any", executionTypes: [] };
