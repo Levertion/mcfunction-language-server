@@ -1,8 +1,9 @@
 import { readFileSync } from "fs";
 import { CompletionItemKind } from "vscode-languageserver/lib/main";
-import { DEFAULTNAMESPACE, MAXSUGGESTIONS, NAMESPACESEPERATOR, PROPCLOSER, PROPDEFINER, PROPSEPERATOR, PROPSOPENER, TAGSTART } from "../../consts";
+import { DEFAULTNAMESPACE, MAXSUGGESTIONS, NAMESPACESEPERATOR, NBTCOMPOUNDOPEN, PROPCLOSER, PROPDEFINER, PROPSEPERATOR, PROPSOPENER, TAGSTART } from "../../consts";
 import { StringReader } from "../../string-reader";
 import { CommandSyntaxException, Parser, SuggestResult } from "../../types";
+import { getSuggestionsWithStartText, parser as NBTParser } from "./nbt";
 
 const EXCEPTIONS = {
     tag_disallowed: new CommandSyntaxException("Tags aren't allowed here, only actual blocks", "argument.block.tag.disallowed"),
@@ -116,11 +117,35 @@ function blockParser(reader: StringReader, suggesting: boolean): Suggester | voi
                     }
                 }
             }
-            // Collapse down into NBT checking or no checking
         } else {
             throw EXCEPTIONS.id_invalid.create(begin, reader.cursor, blockId);
         }
-        // NBT stuff here
+        if (reader.peek() === NBTCOMPOUNDOPEN) {
+            if (suggesting) {
+                const nbtSuggestions = getSuggestionsWithStartText(reader.string, undefined, {
+                    datapackFolder: null,
+                    executionTypes: null,
+                    executortype: null,
+                    commandInfo: {
+                        nbtInfo: {
+                            type: "block",
+                            id: blockId,
+                        },
+                    },
+                });
+                const out: ValueSuggester = {
+                    startText: nbtSuggestions.startText,
+                    startPos: reader.string.lastIndexOf(nbtSuggestions.startText),
+                    options: nbtSuggestions.comp,
+                    valid: true,
+                    type: "value",
+                };
+                return out;
+            } else {
+                NBTParser.parse(reader, undefined);
+                return;
+            }
+        }
     }
 }
 

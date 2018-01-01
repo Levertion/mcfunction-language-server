@@ -125,7 +125,12 @@ export interface CommandContext {
     executortype: "any" | "player" | "noplayer";
     executionTypes?: string[];
     datapackFolder: string;
-    params?: any;
+    commandInfo?: {
+        nbtInfo?: {
+            type: "entity" | "block" | "item",
+            id: string,
+        },
+    };
 }
 
 export interface Suggestion {

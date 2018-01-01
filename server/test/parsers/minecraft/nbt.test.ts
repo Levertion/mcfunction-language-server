@@ -2,11 +2,6 @@ import * as assert from "assert";
 import { NBTContext, parser as NBTParser, parseValue as parseNBTValue } from "../../../parsers/minecraft/nbt";
 import { StringReader } from "../../../string-reader";
 
-it("stuff", () => {
-    const aux = NBTParser.getSuggestions("{Duration:", null, { server: null, executortype: null, params: { type: "entity", id: "minecraft:area_effect_cloud" } });
-    global.console.log(aux);
-});
-
 describe("NBT Parser", () => {
     describe("parse()", () => {
         describe("just string tags", () => {
@@ -84,7 +79,7 @@ describe("NBT Parser", () => {
     });
     describe("getSuggestions()", () => {
         it("should return the correct value when queried using context", () => {
-            const context: NBTContext = { server: undefined, executortype: "any", params: { id: "minecraft:area_effect_cloud", type: "entity" } };
+            const context: NBTContext = { datapackFolder: undefined, executortype: "any", params: { id: "minecraft:area_effect_cloud", type: "entity" } };
             assert.deepEqual(NBTParser.getSuggestions("{Duration:", null, context), ["-2147483648", "0", "1", "2147483647"]);
         });
     });

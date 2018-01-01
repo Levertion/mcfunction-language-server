@@ -1,6 +1,7 @@
 import { EventEmitter } from "events";
 import { Diagnostic, DiagnosticSeverity, IConnection } from "vscode-languageserver/lib/main";
 import { ARGUMENTSEPERATOR, COMMENTSTART } from "./consts";
+import { getContextForPath } from "./context-manager";
 import { getParentOfChildren, toDiagnostic } from "./miscUtils";
 import { getParser } from "./parsers/getParser";
 import { StringReader } from "./string-reader";
@@ -98,7 +99,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
         const child = node.children[childName];
         const newPath: NodePath = Array(...path, childName);
         const props: NodeProperties = Object.assign<GivenProperties, NodeProperties>((child.properties || {}), { key: childName, path: newPath });
-        const newContext = JSON.parse(JSON.stringify(context));
+        const newContext = getContextForPath(newPath, JSON.parse(JSON.stringify(context)));
         const result = parseArgument(child, reader, props, newContext);
         if (result.successful) {
             if (reader.peek() !== ARGUMENTSEPERATOR && reader.canRead()) {
