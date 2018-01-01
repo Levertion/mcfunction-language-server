@@ -7,7 +7,7 @@ describe("calculateDataFolder()", () => {
         if (platform() !== "linux") {
             this.skip();
         }
-        assert.equal(calculateDataFolder("/home/user/minecraft/datapacks/hello/filename.txt"), "/home/user/minecraft/datapacks/hello/");
+        assert.equal(calculateDataFolder("/home/user/minecraft/datapacks/hello/filename.txt"), "/home/user/minecraft/datapacks/");
     });
     it("should find the datapack folder of a string on windows", function () {
         if (platform() !== "win32") {

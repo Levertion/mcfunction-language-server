@@ -24,7 +24,7 @@ export function parseLines(lines: UnparsedLines, server: ServerInformation, uri:
         const docLines = docInfo.lines;
         if (command.length > 0) {
             if (!command.startsWith(COMMENTSTART)) {
-                docLines[lineNo] = parse(command, server.tree, server.documentsInformation[uri].defaultContext.datapackFolder);
+                docLines[lineNo] = parse(command, server.tree, server.documentsInformation[uri].defaultContext.datapacksFolder);
             } else {
                 docLines[lineNo].comment = true;
                 docLines[lineNo].parsing = false;
@@ -52,7 +52,7 @@ function sendDiagnostics(serverInfo: ServerInformation, connection: IConnection,
 function parse(command: string, tree: CommandNode, datapackFolder: string): DocLine {
     const nodes: ArgRange[] = [];
     const reader = new StringReader(command);
-    const context: CommandContext = { datapackFolder, executortype: "any", executionTypes: [] };
+    const context: CommandContext = { datapacksFolder, executortype: "any", executionTypes: [] };
     const issue = parseNodeFollows(tree, reader, [], context, nodes, tree);
     return { text: command, issue, nodes };
 }

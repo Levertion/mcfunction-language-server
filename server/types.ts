@@ -123,7 +123,7 @@ export interface CommandIssue {
 export interface CommandContext {
     executortype: "any" | "player" | "noplayer";
     executionTypes?: string[];
-    datapackFolder: string;
+    datapacksFolder: string;
 }
 
 export interface Suggestion {
