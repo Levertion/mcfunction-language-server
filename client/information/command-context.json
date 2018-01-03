@@ -23,17 +23,18 @@
             }
         },
         "summon": {
+            "context": {
+                "nbtInfo": {
+                    "type": "entity"
+                }
+            },
             "children": {
                 "entity": {
                     "children": {
                         "pos": {
-                            "children": {
-                                "nbt": {
-                                    "context": {
-                                        "nbtInfo": {
-                                            "type": "entity"
-                                        }
-                                    }
+                            "context": {
+                                "nbtInfo": {
+                                    "id": "%2$s"
                                 }
                             }
                         }

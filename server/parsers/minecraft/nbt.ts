@@ -299,6 +299,7 @@ export const parser: Parser = {
                 const path: any = err.data.path;
                 const node = getNodeFromPath(path, context);
                 out = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "");
+                out.push(...err.data.completions);
             }
         }
         return out;

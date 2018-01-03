@@ -1,5 +1,5 @@
 import { Interval, IntervalTree } from "node-interval-tree";
-import { format } from "util";
+import { vsprintf } from "sprintf-js";
 import { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver/lib/main";
 import { StringReader } from "./string-reader";
 
@@ -186,13 +186,13 @@ export class CommandSyntaxException {
         this.data = data;
     }
     public create(start: number, end: number, ...formatting: any[]): CommandIssue {
-        return this.createWithData(start, end, {}, formatting);
+        return this.createWithData(start, end, {}, ...formatting);
     }
-    public createWithData(start: number, end: number, data?: any, ...formatting: any[]): CommandIssue {
+    public createWithData(start: number, end: number, data: any, ...formatting: any[]): CommandIssue {
         const diagnosis: CommandIssue = { severity: this.severity } as CommandIssue;
         diagnosis.end = end;
         diagnosis.start = start;
-        diagnosis.message = format(this.description, ...formatting);
+        diagnosis.message = vsprintf(this.description, formatting);
         diagnosis.type = this.type;
         diagnosis.data = Object.assign(data, this.data);
         return diagnosis;

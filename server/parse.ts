@@ -67,7 +67,7 @@ function parseNodeFollows(node: CommandNode, reader: StringReader, path: NodePat
         }
         return issue;
     }
-    const result = parseChildren(toParse[0], reader, toParse[1], context);
+    const result = parseChildren(toParse[0], reader, toParse[1], context, nodes);
     if (!!result.successful) {
         reader.skip();
         nodes.push(result.successful);
@@ -91,7 +91,7 @@ function parseNodeFollows(node: CommandNode, reader: StringReader, path: NodePat
     return issue;
 }
 
-function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, context: CommandContext) {
+function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, context: CommandContext, nodes: ArgRange[]) {
     let successful: ArgRange;
     let issue: CommandIssue;
     for (const childName of Object.keys(node.children)) {
@@ -99,7 +99,7 @@ function parseChildren(node: CommandNode, reader: StringReader, path: NodePath, 
         const child = node.children[childName];
         const newPath: NodePath = Array(...path, childName);
         const props: NodeProperties = Object.assign<GivenProperties, NodeProperties>((child.properties || {}), { key: childName, path: newPath });
-        const newContext = getContextForPath(newPath, JSON.parse(JSON.stringify(context)));
+        const newContext = getContextForPath(newPath, JSON.parse(JSON.stringify(context)), nodes.map((v) => reader.string.slice(v.low, v.high)));
         const result = parseArgument(child, reader, props, newContext);
         if (result.successful) {
             if (reader.peek() !== ARGUMENTSEPERATOR && reader.canRead()) {
