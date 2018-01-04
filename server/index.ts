@@ -85,7 +85,7 @@ connection.onDidOpenTextDocument((params) => {
     const lines = params.textDocument.text.split(/\r?\n/g);
     serverInfo.documentsInformation[params.textDocument.uri] = {
         lines: new Array(lines.length).fill("").map<DocLine>(() => ({ nodes: [], parsing: true })),
-        defaultContext: { datapackFolder: calculateDataFolder(params.textDocument.uri, serverInfo.workspaceFolder), executionTypes: [], executortype: "any" },
+        defaultContext: { datapacksFolder: calculateDataFolder(params.textDocument.uri, serverInfo.workspaceFolder), executionTypes: [], executortype: "any" },
     };
     parseLines({ lines, numbers: Array<number>(lines.length).fill(0).map<number>((_, i) => i) }, serverInfo, params.textDocument.uri, connection, parseFinishEmitter);
 });

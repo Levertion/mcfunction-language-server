@@ -15,8 +15,10 @@
         "installServer": "installServerIntoExtension ../client ./package.json ./tsconfig.json"
     },
     "dependencies": {
+        "@types/deepmerge": "^1.3.3",
         "@types/sprintf-js": "^1.1.0",
         "ajv": "^5.5.2",
+        "deepmerge": "^2.0.1",
         "js-combinatorics": "^0.5.3",
         "lodash.isequal": "^4.5.0",
         "mc-blockstates": "gist:6d1bd7b9761686b466bb1cdd19aa30b9",

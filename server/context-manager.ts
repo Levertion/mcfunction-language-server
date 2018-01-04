@@ -1,3 +1,4 @@
+import deepmerge = require("deepmerge");
 import Fs = require("fs");
 import Path = require("path");
 import { vsprintf } from "sprintf-js";
@@ -19,14 +20,14 @@ export function getContextForPath(path: string[], existingContext: CommandContex
     }
     let lastNode = contextPaths;
     for (const s of path) {
+        if (lastNode.context !== undefined) {
+            lastNode.context = mapFinalNode(lastNode.context, (n) => vsprintf(n.toString(), args));
+            out.commandInfo = deepmerge(out.commandInfo, lastNode.context);
+        }
         if (lastNode.children === undefined || !Object.keys(lastNode.children).includes(s)) {
             break;
         }
         lastNode = lastNode.children[s];
-        if (lastNode.context !== undefined) {
-            lastNode.context = mapFinalNode(lastNode.context, (n) => vsprintf(n.toString(), args));
-            Object.assign(out.commandInfo, lastNode.context);
-        }
     }
     return out;
 }

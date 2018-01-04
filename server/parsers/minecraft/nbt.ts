@@ -3,13 +3,23 @@ import Path = require("path");
 import Url = require("url");
 import { NBTARGSEP, NBTARRPREFIX, NBTARRPREFIXSEP, NBTCOMPOUNDCLOSE, NBTCOMPOUNDOPEN, NBTKEYVALUESEP, NBTLISTARRCLOSE, NBTLISTARROPEN, NBTNUMBERSUFFIX } from "../../consts";
 import { StringReader } from "../../string-reader";
-import { CommandContext, CommandIssue, CommandSyntaxException, NodeProperties, Parser } from "../../types";
+import { CommandContext, CommandSyntaxException, NodeProperties, Parser } from "../../types";
+import { ArrayReader } from "./nbt-util/array-reader";
+import { NBTIssue } from "./nbt-util/nbt-issue";
 
 const nbtPath = Path.resolve(__dirname, "../../node_modules/mc-nbt-paths/root.json");
 
 const nbtRoot = JSON.parse(fs.readFileSync(Path.resolve(__dirname, nbtPath)).toString()) as NBTNode;
 
 const endCompletableTag = /byte|short|int|long|float|double|string/;
+
+const tryWithData = (func: () => any, data: any) => {
+    try {
+        func();
+    } catch (err) {
+        throw new NBTIssue(err, data);
+    }
+};
 
 interface NBTNode {
     type?: "byte" | "short" | "int" | "long" | "float" | "double" | "byte_array" | "string" | "list" | "compound" | "int_array" | "long_array" | "root";
@@ -22,42 +32,12 @@ interface NBTNode {
     context: CommandContext["commandInfo"]["nbtInfo"];
 }
 
-class ArrayReader {
-
-    private arr: string[];
-    private index = 0;
-
-    public constructor(arr: string[]) {
-        this.arr = arr;
-    }
-
-    public next() {
-        return this.arr[this.index++];
-    }
-
-    public peek() {
-        return this.arr[this.index];
-    }
-
-    public skip() {
-        this.index++;
-    }
-
-    public done() {
-        return this.arr.length === this.index;
-    }
-
-    public addAtCursor(items: string[]) {
-        this.arr.splice(this.index, 0, ...items);
-    }
-}
-
 const exception = {
     trailingData: new CommandSyntaxException("Unexpected trailing data", "argument.nbt.trailing"),
     needKey: new CommandSyntaxException("Extected key", "argument.nbt.expected.key"),
     needValue: new CommandSyntaxException("Extected value", "argument.nbt.expected.value"),
     mixedList: new CommandSyntaxException("Can't insert %s into list of %s", "argument.nbt.list.mixed"),
-    mixedArray: new CommandSyntaxException("Can't insert %s into %s", "argument.nbt.array.mixed", 1, { correctType: true }),
+    mixedArray: new CommandSyntaxException("Can't insert %s into %s", "argument.nbt.array.mixed"),
     invalidArray: new CommandSyntaxException("Invalid array type '%s'", "argument.nbt.array.invalid"),
     badChar: new CommandSyntaxException("Expected character '%s', but got '%s'", "argument.nbt.badchar"),
     invalidNbt: new CommandSyntaxException("Invalid NBT: %s", "argument.nbt.invalid"),
@@ -118,10 +98,11 @@ const valueParsers = {
         const start = reader.cursor;
         reader.expect(NBTLISTARROPEN);
         if (!reader.canRead()) {
-            throw exception.invalidNbt.create(start, reader.cursor, { correctType: true, completions: [NBTLISTARRCLOSE] }, "Expected " + NBTLISTARRCLOSE);
+            throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected " + NBTLISTARRCLOSE), { correctType: true, completions: [NBTLISTARRCLOSE] });
         }
         reader.skipWhitespace();
         if (reader.peek() === NBTLISTARRCLOSE) {
+            reader.skip();
             return NBTLISTARROPEN + NBTLISTARRCLOSE;
         }
         let listType;
@@ -133,9 +114,10 @@ const valueParsers = {
         }
         reader.skipWhitespace();
         if (reader.peek() === NBTLISTARRCLOSE) {
+            reader.skip();
             return reader.string.slice(start, reader.cursor);
         }
-        reader.expect(NBTARGSEP, {
+        tryWithData(() => reader.expect(NBTARGSEP), {
             correctType: true,
             compString: endCompletableTag.test(listType.type) ? listType.value.toString() : undefined,
         });
@@ -150,40 +132,43 @@ const valueParsers = {
                 throw err;
             }
             if (val.type !== listType.type) {
-                throw exception.mixedList.createWithData(valStart, reader.cursor, { correctType: true }, reader.string.charAt(valStart));
+                throw new NBTIssue(exception.mixedList.create(valStart, reader.cursor, reader.string.charAt(valStart)), { correctType: true });
             }
             reader.skipWhitespace();
             if (reader.peek() === NBTLISTARRCLOSE) {
                 break;
             }
-            reader.expect(NBTARGSEP, {
+            tryWithData(() => reader.expect(NBTARGSEP), {
                 correctType: true,
                 compString: endCompletableTag.test(val.type) ? val.value.toString() : undefined,
             });
         }
+        reader.skip();
         return reader.string.slice(start, reader.cursor);
     },
     tagCompound: (reader: StringReader) => {
-        const out: any = {};
+        const keys = [];
         const start = reader.cursor;
         reader.expect(NBTCOMPOUNDOPEN);
         if (!reader.canRead()) {
-            throw exception.invalidNbt.createWithData(start, reader.cursor, { correctType: true, completions: [NBTCOMPOUNDCLOSE] }, "Expected }");
+            throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected }"), { pos: reader.cursor + 1, currKeys: [], compoundType: "key", correctType: true, completions: [NBTCOMPOUNDCLOSE] });
         }
         let next = reader.peek();
         while (next !== NBTCOMPOUNDCLOSE) {
             reader.skipWhitespace();
+            const keyStart = reader.cursor;
             let key;
             try {
-                key = reader.readString();
+                key = reader.readString(true);
             } catch (err) {
-                throw exception.needKey.createWithData(start, reader.cursor, { correctType: true });
+                throw new NBTIssue(exception.needKey.create(start, reader.cursor), { currKeys: keys, pos: keyStart, compoundType: "key", correctType: true });
             }
             reader.skipWhitespace();
-            reader.expect(NBTKEYVALUESEP, { correctType: true, compString: key });
+            tryWithData(() => reader.expect(NBTKEYVALUESEP), { currKeys: keys, compoundType: "key", correctType: true, compString: key, pos: keyStart, completions: [NBTKEYVALUESEP] });
+            keys.push(key);
             reader.skipWhitespace();
             if (!reader.canRead()) {
-                throw exception.needValue.createWithData(reader.cursor, reader.cursor, { compString: "", correctType: true, path: [key] });
+                throw new NBTIssue(exception.needValue.create(reader.cursor, reader.cursor), { compoundType: "val", compString: "", pos: reader.cursor, correctType: true, path: [key] });
             }
             let value;
             try {
@@ -195,16 +180,19 @@ const valueParsers = {
             reader.skipWhitespace();
             next = reader.peek();
             if (next !== NBTCOMPOUNDCLOSE) {
-                reader.expect(NBTARGSEP, {
+                tryWithData(() => reader.expect(NBTARGSEP), {
+                    compoundType: "val",
                     correctType: true,
+                    pos: reader.cursor,
                     compString: /byte|short|int|long|float|double|string/.test(value.type) ? value.value : undefined,
                 });
                 reader.skipWhitespace();
             } else {
                 reader.skip();
+                return reader.string.slice(start, reader.cursor);
             }
-            out[key] = value;
         }
+        reader.skip();
         return reader.string.slice(start, reader.cursor);
     },
 };
@@ -266,14 +254,14 @@ interface ParserReturn {
 }
 
 export const parseValue = (reader: StringReader): ParserReturn => {
-    let lastErr: CommandIssue;
+    let lastErr: NBTIssue;
     for (const e of parserFunc) {
         const start = reader.cursor;
         try {
             return { type: e.type, value: e.func(reader) };
         } catch (err) {
             reader.cursor = start;
-            if ((lastErr === undefined || lastErr.data === undefined || lastErr.data.correctType === undefined || (lastErr.data.correctType && err.data.correctType) || !lastErr.data.correctType)) {
+            if (!(lastErr !== undefined && lastErr.data !== undefined && lastErr.data.correctType !== undefined && lastErr.data.correctType)) {
                 lastErr = err;
             }
         }
@@ -283,14 +271,18 @@ export const parseValue = (reader: StringReader): ParserReturn => {
 
 export const parser: Parser = {
     parse: (reader: StringReader, _prop: NodeProperties, _context?: CommandContext) => {
-        return valueParsers.tagCompound(reader);
+        try {
+            return valueParsers.tagCompound(reader);
+        } catch (err) {
+            throw (err as NBTIssue).err;
+        }
     },
 
     getSuggestions: (text: string, _prop: NodeProperties, context?: CommandContext) => {
         if (context === undefined) {
             return [""];
         }
-        let out: string[] = [];
+        const out: string[] = [];
         const reader = new StringReader(text);
         try {
             parseValue(reader);
@@ -298,46 +290,80 @@ export const parser: Parser = {
             if (err.data !== undefined) {
                 const path: any = err.data.path;
                 const node = getNodeFromPath(path, context);
-                out = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "");
-                out.push(...err.data.completions);
+                if (tagSuggestions[node.type] !== undefined) {
+                    out.push(...tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node));
+                }
+                if (err.data.completions !== undefined) {
+                    out.push(...err.data.completions);
+                }
             }
         }
         return out;
     },
 };
 
-export const getSuggestionsWithStartText = (text: string, _prop: NodeProperties, context?: CommandContext) => {
-    const out: { startText?: string, comp?: string[] } = {};
-    const reader = new StringReader(text);
+export const getSuggestionsWithStartText = (reader: StringReader, _prop: NodeProperties, context?: CommandContext) => {
+    const out: { startText?: string, comp?: string[], startPos?: number } = {};
     try {
         parseValue(reader);
     } catch (err) {
         if (err.data !== undefined) {
-            const path: any = err.data.path;
+            const path: any = err.data.path === undefined ? [] : err.data.path;
             const node = getNodeFromPath(path, context);
-            out.comp = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "");
+            if (tagSuggestions[node.type] !== undefined) {
+                out.comp = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node, err);
+            }
             out.startText = err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "";
+            if (err.data.completions !== undefined) {
+                out.comp.push(...err.data.completions);
+            }
+            out.startPos = err.data.pos === undefined ? 0 : err.data.pos;
         }
     }
     return out;
 };
 
-const tagSuggestions: { [index: string]: (text: string) => string[] } = {
+const tagSuggestions: { [index: string]: (text: string, node?: NBTNode, err?: NBTIssue) => string[] } = {
     byte: (text: string) => ["-256b", "0b", "1b", "255b"].filter((val) => val.startsWith(text)),
     short: (text: string) => ["-32768s", "0s", "1s", "32767s"].filter((val) => val.startsWith(text)),
     int: (text: string) => ["-2147483648", "0", "1", "2147483647"].filter((val) => val.startsWith(text)),
     long: (text: string) => ["0l", "1l"].filter((val) => val.startsWith(text)),
     float: (text: string) => ["0f", "1f"].filter((val) => val.startsWith(text)),
     double: (text: string) => ["0d", "1d"].filter((val) => val.startsWith(text)),
+    compound: (text: string, node: NBTNode, err: NBTIssue) => {
+        const out: string[] = [];
+        if (err.data.compoundType === "key") {
+            for (const s of Object.keys(node.children)) {
+                if (s.startsWith(text) && !err.data.currKeys.includes(s)) {
+                    out.push(s);
+                }
+            }
+        } else if (err.data.compoundType === "val") {
+            for (const s of Object.keys(node.children)) {
+                if (tagSuggestions[node.children[s].type] !== undefined) {
+                    out.push(...tagSuggestions[node.children[s].type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node));
+                }
+            }
+        }
+        return out;
+    },
+    list: (_text: string, node: NBTNode) => {
+        if (node.item !== undefined) {
+            return tagSuggestions[node.type]("", node.item);
+        }
+        return [];
+    },
 };
 
 const getNodeFromPath = (path: string[], context?: CommandContext) => {
     const type = context.commandInfo.nbtInfo.type;
     path.splice(0, 0, type, context.commandInfo.nbtInfo.id !== undefined ? context.commandInfo.nbtInfo.id : "none");
-    return goToPathNode(nbtPath, nbtRoot, new ArrayReader(path), context);
+    const arrReader = new ArrayReader(path);
+    return goToPathNode(nbtPath, nbtRoot, arrReader, context);
 };
 
-const goToPathNode = (currentPath: string, node: NBTNode, arrReader: ArrayReader, context?: CommandContext): NBTNode => {
+const goToPathNode = (currentPath: string, tempNode: NBTNode, arrReader: ArrayReader, context?: CommandContext): NBTNode => {
+    const node = evalRef(currentPath, arrReader, tempNode, context);
     if (arrReader.done()) {
         return node;
     }
@@ -365,42 +391,49 @@ const goToPathNode = (currentPath: string, node: NBTNode, arrReader: ArrayReader
                 return out;
             }
         }
-        if (node.child_ref !== undefined) {
-            const evalNode = evalNodeWithChildRefs(currentPath, node, context);
-            const out = goToPathNode(currentPath, evalNode.children[next], arrReader, context);
-            if (out !== null) {
-                return out;
-            }
-        }
     } else if (node.type === "list") {
         arrReader.skip();
         if (next !== "." || node.item === undefined) {
             return null;
         }
         return goToPathNode(currentPath, node.item, arrReader, context);
-    } else if (node.ref !== undefined) {
-        const refUrl = Url.parse(node.ref);
-        const fragParts = refUrl.hash === null ? [] : refUrl.hash.slice(1).split("/");
-        arrReader.addAtCursor(fragParts);
-        const refPath = Path.resolve(Path.parse(currentPath).dir, refUrl.path);
-        return goToPathNode(refPath, JSON.parse(fs.readFileSync(refPath).toString()), arrReader, context);
     }
     return null;
 };
 
 const evalNodeWithChildRefs = (currentPath: string, node: NBTNode, context?: CommandContext) => {
     const out = Object.assign(node) as NBTNode;
-    for (const cr of node.child_ref) {
+    for (const cr of out.child_ref) {
         const refUrl = Url.parse(cr);
-        const fragParts = refUrl.hash.slice(1).split("/");
+        const fragParts = refUrl.hash === null ? [] : refUrl.hash.slice(1).split("/");
         const crArrReader = new ArrayReader(fragParts);
-        const refPath = Path.resolve(currentPath, refUrl.path);
+        const refPath = Path.resolve(Path.parse(currentPath).dir, refUrl.path);
         const refNode = goToPathNode(refPath, JSON.parse(fs.readFileSync(refPath).toString()), crArrReader, context);
-        if (refNode.child_ref !== undefined) {
-            const evalNode = evalNodeWithChildRefs(refPath, refNode, context);
-            for (const c of Object.keys(evalNode.children)) {
-                out.children[c] = evalNode.children[c];
+        if (refNode.children !== undefined) {
+            for (const c of Object.keys(refNode.children)) {
+                out.children[c] = refNode.children[c];
             }
+        }
+    }
+    return out;
+};
+
+const evalNodeWithRef = (currentPath: string, arrReader: ArrayReader, node: NBTNode, context?: CommandContext) => {
+    const refUrl = Url.parse(node.ref);
+    const fragParts = refUrl.hash === null ? [] : refUrl.hash.slice(1).split("/");
+    arrReader.addAtCursor(fragParts);
+    const refPath = Path.resolve(Path.parse(currentPath).dir, refUrl.path);
+    return goToPathNode(refPath, JSON.parse(fs.readFileSync(refPath).toString()), arrReader, context);
+};
+
+const evalRef = (currentPath: string, arrReader: ArrayReader, node: NBTNode, context?: CommandContext) => {
+    let out = node;
+    if (node.ref !== undefined) {
+        out = evalNodeWithRef(currentPath, arrReader, out, context);
+    }
+    if (node.type === "compound" || node.type === "root") {
+        if (node.child_ref !== undefined) {
+            out = evalNodeWithChildRefs(currentPath, out, context);
         }
     }
     return out;

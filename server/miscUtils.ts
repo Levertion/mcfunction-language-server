@@ -5,7 +5,7 @@ import { dataFolderName } from "./consts";
 import { CommandIssue, CommandNode, NodePath } from "./types";
 
 /**
- * Find the datapack a file is in.
+ * Find the datapacks folder a file is in
  * @param uri The URI of the file
  * @param normal The URI to fall back on (such as the workspace root)
  */

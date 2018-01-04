@@ -202,18 +202,18 @@ export class StringReader {
      * Check if a character follows.
      * @param c The character which should come next
      */
-    public expect(c: string, data: any = {}) {
+    public expect(c: string) {
         if (this.peek() !== c) {
-            throw EXCEPTIONS.ExpectedSymbol.createWithData(this.cursor, this.cursor, data, this.peek(), c);
+            throw EXCEPTIONS.ExpectedSymbol.create(this.cursor, this.cursor, this.peek(), c);
         }
         if (this.canRead()) {
             this.skip();
         }
     }
 
-    public regExpect(r: RegExp, data: any = {}) {
+    public regExpect(r: RegExp) {
         if (!r.test(this.peek())) {
-            throw EXCEPTIONS.ExpectedSymbol.createWithData(this.cursor, this.cursor, data, this.peek(), r);
+            throw EXCEPTIONS.ExpectedSymbol.create(this.cursor, this.cursor, this.peek(), r);
         }
         if (this.canRead()) {
             this.skip();

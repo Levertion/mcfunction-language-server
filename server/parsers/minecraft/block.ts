@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import { CompletionItemKind } from "vscode-languageserver/lib/main";
 import { DEFAULTNAMESPACE, MAXSUGGESTIONS, NAMESPACESEPERATOR, NBTCOMPOUNDOPEN, PROPCLOSER, PROPDEFINER, PROPSEPERATOR, PROPSOPENER, TAGSTART } from "../../consts";
 import { StringReader } from "../../string-reader";
-import { CommandSyntaxException, Parser, SuggestResult } from "../../types";
+import { CommandContext, CommandSyntaxException, NodeProperties, Parser, SuggestResult } from "../../types";
 import { getSuggestionsWithStartText, parser as NBTParser } from "./nbt";
 
 const EXCEPTIONS = {
@@ -39,8 +39,12 @@ interface PropertySuggester extends Suggestion {
     type: "property";
     block: string;
 }
-type Suggester = NameSuggester | ValueSuggester | PropertySuggester;
-function blockParser(reader: StringReader, suggesting: boolean): Suggester | void {
+interface NBTSuggester extends Suggestion {
+    type: "nbt";
+    values: string[];
+}
+type Suggester = NameSuggester | ValueSuggester | PropertySuggester | NBTSuggester;
+function blockParser(reader: StringReader, suggesting: boolean, context: CommandContext): Suggester | void {
     const begin = reader.cursor;
     if (reader.canRead() && reader.peek() === TAGSTART) {
         // Do Tag Stuff
@@ -122,8 +126,9 @@ function blockParser(reader: StringReader, suggesting: boolean): Suggester | voi
         }
         if (reader.peek() === NBTCOMPOUNDOPEN) {
             if (suggesting) {
-                const nbtSuggestions = getSuggestionsWithStartText(reader.string, undefined, {
-                    datapackFolder: null,
+                const nbtStart = reader.cursor;
+                const nbtSuggestions = getSuggestionsWithStartText(reader, undefined, {
+                    datapacksFolder: null,
                     executionTypes: null,
                     executortype: null,
                     commandInfo: {
@@ -133,16 +138,16 @@ function blockParser(reader: StringReader, suggesting: boolean): Suggester | voi
                         },
                     },
                 });
-                const out: ValueSuggester = {
+                const out: NBTSuggester = {
                     startText: nbtSuggestions.startText,
-                    startPos: reader.string.lastIndexOf(nbtSuggestions.startText),
-                    options: nbtSuggestions.comp,
+                    startPos: nbtStart + nbtSuggestions.startPos,
+                    values: nbtSuggestions.comp,
                     valid: true,
-                    type: "value",
+                    type: "nbt",
                 };
                 return out;
             } else {
-                NBTParser.parse(reader, undefined);
+                NBTParser.parse(reader, undefined, context);
                 return;
             }
         }
@@ -150,14 +155,14 @@ function blockParser(reader: StringReader, suggesting: boolean): Suggester | voi
 }
 
 export const parser: Parser = {
-    parse: (reader: StringReader) => {
-        blockParser(reader, false);
+    parse: (reader: StringReader, _prop: NodeProperties, context: CommandContext) => {
+        blockParser(reader, false, context);
     },
-    getSuggestions: (start) => {
+    getSuggestions: (start: string, _prop: NodeProperties, context: CommandContext) => {
         const suggestions: SuggestResult[] = [];
         try {
             const reader = new StringReader(start);
-            const suggestionInfo = blockParser(reader, true);
+            const suggestionInfo = blockParser(reader, true, context);
             if (!!suggestionInfo) {
                 switch (suggestionInfo.type) {
                     case "name":
@@ -187,6 +192,13 @@ export const parser: Parser = {
                         for (const option of suggestionInfo.options) {
                             if (option.startsWith(suggestionInfo.startText)) {
                                 suggestions.push({ value: option, start: suggestionInfo.startPos, kind: CompletionItemKind.Value });
+                            }
+                        }
+                        break;
+                    case "nbt":
+                        for (const val of suggestionInfo.values) {
+                            if (val.startsWith(suggestionInfo.startText) && suggestions.length < MAXSUGGESTIONS) {
+                                suggestions.push({ start: suggestionInfo.startPos, value: val });
                             }
                         }
                         break;

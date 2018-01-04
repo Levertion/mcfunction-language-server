@@ -15,10 +15,10 @@ import {
 let defaultClient: LanguageClient;
 const clients: Map<string, LanguageClient> = new Map();
 
-let SortedWorkspaceFolders: string[];
-function sortedWorkspaceFolders(): string[] {
-    if (SortedWorkspaceFolders === void 0) {
-        SortedWorkspaceFolders = workspace.workspaceFolders.map((folder) => {
+let sortedWorkspaceFolders: string[];
+function sortWorkspaceFolders(): string[] {
+    if (sortedWorkspaceFolders === void 0) {
+        sortedWorkspaceFolders = workspace.workspaceFolders.map((folder) => {
             let result = folder.uri.toString();
             // Ensure ends with consistent character
             if (result.charAt(result.length - 1) !== "/") {
@@ -31,12 +31,12 @@ function sortedWorkspaceFolders(): string[] {
             },
         );
     }
-    return SortedWorkspaceFolders;
+    return sortedWorkspaceFolders;
 }
-workspace.onDidChangeWorkspaceFolders(() => SortedWorkspaceFolders = undefined);
+workspace.onDidChangeWorkspaceFolders(() => sortedWorkspaceFolders = undefined);
 
 function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
-    const sorted = sortedWorkspaceFolders();
+    const sorted = sortWorkspaceFolders();
     for (const element of sorted) {
         let uri = folder.uri.toString();
         if (uri.charAt(uri.length - 1) !== "/") {

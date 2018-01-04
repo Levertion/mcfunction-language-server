@@ -80,7 +80,7 @@ describe("NBT Parser", () => {
     });
     describe("getSuggestions()", () => {
         it("should return the correct value when queried using context", () => {
-            const context: CommandContext = { datapackFolder: undefined, executortype: "any", commandInfo: { nbtInfo: { id: "minecraft:area_effect_cloud", type: "entity" } } };
+            const context: CommandContext = { datapacksFolder: undefined, executortype: "any", commandInfo: { nbtInfo: { id: "minecraft:area_effect_cloud", type: "entity" } } };
             assert.deepEqual(NBTParser.getSuggestions("{Duration:", null, context), ["-2147483648", "0", "1", "2147483647"]);
         });
     });

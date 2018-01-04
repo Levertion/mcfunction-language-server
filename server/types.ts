@@ -118,19 +118,18 @@ export interface CommandIssue {
     severity: DiagnosticSeverity;
     start: number;
     end: number;
-    data: any;
 }
 
 export interface CommandContext {
     executortype: "any" | "player" | "noplayer";
     executionTypes?: string[];
-    datapackFolder: string;
     commandInfo?: {
         nbtInfo?: {
             type: "entity" | "block" | "item",
             id: string,
         },
     };
+    datapacksFolder: string;
 }
 
 export interface Suggestion {
@@ -178,23 +177,17 @@ export class CommandSyntaxException {
     private description: string;
     private type: string;
     private severity: DiagnosticSeverity;
-    private data: any;
-    constructor(description: string, type: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error, data?: any) {
+    constructor(description: string, type: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error) {
         this.description = description;
         this.type = type;
         this.severity = severity;
-        this.data = data;
     }
     public create(start: number, end: number, ...formatting: any[]): CommandIssue {
-        return this.createWithData(start, end, {}, ...formatting);
-    }
-    public createWithData(start: number, end: number, data: any, ...formatting: any[]): CommandIssue {
         const diagnosis: CommandIssue = { severity: this.severity } as CommandIssue;
         diagnosis.end = end;
         diagnosis.start = start;
         diagnosis.message = vsprintf(this.description, formatting);
         diagnosis.type = this.type;
-        diagnosis.data = Object.assign(data, this.data);
         return diagnosis;
     }
 }
