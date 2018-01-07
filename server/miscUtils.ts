@@ -55,3 +55,36 @@ export function getParentOfChildren(nodePath: NodePath, tree: CommandNode): [Com
         return false;
     }
 }
+interface AnyObject { // Added to appease no implicit any
+    [key: string]: any;
+}
+/**
+ * Simple object check.
+ * @param item
+ * @returns {boolean}
+ */
+export function isObject(item: any): boolean {
+    return (item && typeof item === "object" && !Array.isArray(item));
+}
+
+// https://stackoverflow.com/a/34749873/8728461
+/**
+ * Deep merge two objects.
+ */
+export function mergeDeep(target: AnyObject, ...sources: AnyObject[]): AnyObject {
+    if (!sources.length) { return target; }
+    const source = sources.shift();
+
+    if (isObject(target) && isObject(source)) {
+        for (const key in source) {
+            if (isObject(source[key])) {
+                if (!target[key]) { Object.assign(target, { [key]: {} }); }
+                mergeDeep(target[key], source[key]);
+            } else {
+                Object.assign(target, { [key]: source[key] });
+            }
+        }
+    }
+
+    return mergeDeep(target, ...sources);
+}

@@ -3,8 +3,22 @@
 declare module NodeJS {
     interface Global {
         mcfunctionLog: (message: string) => void;
+        mcfunctionSettings: McfunctionSettings;
     }
 }
 
-// Used to allow logging without passing info to files which don't need it.
+/**
+ * Log to the remote console.
+ */
 declare const mcfunctionLog: (message: string) => void;
+/**
+ * The settings of this server
+ */
+declare const mcfunctionSettings: McfunctionSettings;
+
+declare interface McfunctionSettings {
+    dataobtainer: {
+        snapshots: boolean,
+        javapath: string,
+    }
+}

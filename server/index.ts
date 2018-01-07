@@ -15,7 +15,7 @@ import {
     createConnection, TextDocumentSyncKind,
 } from "vscode-languageserver";
 import { buildTree, getCompletions } from "./complete";
-import { calculateDataFolder } from "./miscUtils";
+import { calculateDataFolder, mergeDeep } from "./miscUtils";
 import { parseLines, UnparsedLines } from "./parse";
 import { getChangedLines } from "./server-information";
 import { ArgRange, DocLine, ServerInformation } from "./types";
@@ -51,10 +51,12 @@ connection.onInitialize((params) => {
     };
 });
 
-// This is where any configurations will come in
-connection.onDidChangeConfiguration(() => {
-    connection.console.log("Config Change successful");
-    // Different settings go here. For example, custom JAR location for command tree recovery.
+connection.onDidChangeConfiguration((params) => {
+    if (!global.mcfunctionSettings) {
+        global.mcfunctionSettings = {} as McfunctionSettings;
+    }
+    mergeDeep(global.mcfunctionSettings, params.settings.mcfunction);
+    mcfunctionLog(`Config Change successful ${JSON.stringify(params)}, into ${JSON.stringify(global.mcfunctionSettings)}`);
 });
 
 // Respond to one of the text documents changing.

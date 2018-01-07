@@ -72,6 +72,9 @@ export function activate(context: ExtensionContext) {
                 documentSelector: [
                     { scheme: "untitled", language: "mcfunction" },
                 ],
+                synchronize: {
+                    configurationSection: "mcfunction",
+                },
                 diagnosticCollectionName: "mcfunction-lsp",
                 outputChannel,
             };
@@ -102,6 +105,9 @@ export function activate(context: ExtensionContext) {
                 diagnosticCollectionName: "mcfunction-lsp",
                 workspaceFolder: folder,
                 outputChannel,
+                synchronize: {
+                    configurationSection: "mcfunction",
+                },
             };
             const client = new LanguageClient("mcfunction-lsp", "Minecraft Function Language Server", serverOptions, clientOptions);
             client.start();
