@@ -32,7 +32,7 @@ export function getContextForPath(path: string[], existingContext: CommandContex
     return out;
 }
 
-function mapFinalNode(obj: any, callback: (n: object) => void) {
+function mapFinalNode(obj: any, callback: (n: object) => any) {
     const out: any = {};
     for (const o of Object.keys(obj)) {
         if (typeof obj[o] === "object" && obj[o] !== null) {

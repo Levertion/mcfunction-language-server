@@ -1,4 +1,3 @@
-minecraft:block_pos
 minecraft:color
 minecraft:component
 minecraft:entity

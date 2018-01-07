@@ -1,5 +1,7 @@
+import deepmerge = require("deepmerge");
 import fs = require("fs");
 import Path = require("path");
+import { sprintf } from "sprintf-js";
 import Url = require("url");
 import { NBTARGSEP, NBTARRPREFIX, NBTARRPREFIXSEP, NBTCOMPOUNDCLOSE, NBTCOMPOUNDOPEN, NBTKEYVALUESEP, NBTLISTARRCLOSE, NBTLISTARROPEN, NBTNUMBERSUFFIX } from "../../consts";
 import { StringReader } from "../../string-reader";
@@ -13,7 +15,7 @@ const nbtRoot = JSON.parse(fs.readFileSync(Path.resolve(__dirname, nbtPath)).toS
 
 const endCompletableTag = /byte|short|int|long|float|double|string/;
 
-const tryWithData = (func: () => any, data: any) => {
+const tryWithData = (func: () => any, data: any = {}) => {
     try {
         func();
     } catch (err) {
@@ -29,7 +31,15 @@ interface NBTNode {
     child_ref?: string[];
     item?: NBTNode;
     ref?: string;
-    context: CommandContext["commandInfo"]["nbtInfo"];
+    context: {
+        ref_dict?: [{
+            name: string,
+            ref: string,
+            default_val: string,
+        }];
+        data: CommandContext["commandInfo"]["nbtInfo"];
+        replaceInfo?: boolean;
+    };
 }
 
 const exception = {
@@ -43,83 +53,103 @@ const exception = {
     invalidNbt: new CommandSyntaxException("Invalid NBT: %s", "argument.nbt.invalid"),
 };
 
+const getTypeForNumberType: { [key: string]: string } = {
+    "b": "byte",
+    "s": "short",
+    "": "int",
+    "l": "long",
+    "f": "float",
+    "d": "double",
+    "B": "byte_array",
+    "I": "int_array",
+    "L": "long_array",
+};
+
 const valueParsers = {
-    tagWholeNum: (reader: StringReader, suf?: string) => {
+    tagWholeNum: (reader: StringReader, suf: string): ParserReturn => {
         const start = reader.cursor;
+        let out;
         try {
-            reader.readScientific();
+            out = reader.readScientific();
         } catch (e) {
             reader.cursor = start;
-            reader.readInt();
+            tryWithData(() => out = reader.readInt());
         }
         if (suf !== undefined) {
-            reader.expect(suf);
+            tryWithData(() => reader.expect(suf));
         }
-        return reader.string.slice(start, reader.cursor);
+        return { text: reader.string.slice(start, reader.cursor), value: out, type: getTypeForNumberType[suf] };
     },
-    tagFloatNum: (reader: StringReader, suf: string) => {
+    tagFloatNum: (reader: StringReader, suf: string): ParserReturn => {
         const start = reader.cursor;
+        let out;
         try {
-            reader.readScientific();
+            out = reader.readScientific();
         } catch (e) {
             reader.cursor = start;
-            reader.readFloat();
+            tryWithData(() => out = reader.readFloat(), {});
         }
         if (suf !== undefined) {
-            reader.expect(suf);
+            tryWithData(() => reader.expect(suf), {});
         }
-        return reader.string.slice(start, reader.cursor);
+        return { text: reader.string.slice(start, reader.cursor), value: out, type: getTypeForNumberType[suf] };
     },
-    tagString: (reader: StringReader) => {
+    tagString: (reader: StringReader): ParserReturn => {
         const start = reader.cursor;
-        reader.readString(true);
-        return reader.string.slice(start, reader.cursor);
+        let out;
+        tryWithData(() => out = reader.readString(true));
+        return { text: reader.string.slice(start, reader.cursor), value: out, type: "string" };
     },
-    tagWholeNumArray: (reader: StringReader, suf: string) => {
+    tagWholeNumArray: (reader: StringReader, pre: string): ParserReturn => {
+        const out: number[] = [];
         const start = reader.cursor;
-        reader.expect(NBTLISTARROPEN);
+        tryWithData(() => reader.expect(NBTLISTARROPEN));
         if (!reader.canRead()) {
-            throw exception.invalidNbt.create(start, reader.cursor, "Expected " + NBTLISTARRCLOSE);
+            throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected " + NBTLISTARRCLOSE));
         }
-        if (!(reader.peek() === suf && reader.peek(1) === NBTARRPREFIXSEP)) {
-            throw exception.invalidArray.create(start, reader.cursor, reader.peek());
+        if (!(reader.peek() === pre && reader.peek(1) === NBTARRPREFIXSEP)) {
+            throw new NBTIssue(exception.invalidArray.create(start, reader.cursor, reader.peek()));
         }
         reader.skip(); reader.skip();
         let next: string = "";
         while (next !== NBTLISTARRCLOSE) {
             reader.skipWhitespace();
-            valueParsers.tagWholeNum(reader, undefined);
+            const num = valueParsers.tagWholeNum(reader, undefined);
+            out.push(num.value);
             reader.skipWhitespace();
             next = reader.read();
         }
-        return reader.string.slice(start, reader.cursor);
+        return { text: reader.string.slice(start, reader.cursor), value: out, type: getTypeForNumberType[pre] };
     },
-    tagList: (reader: StringReader) => {
+    tagList: (reader: StringReader): ParserReturn => {
+        const out: any[] = [];
         const start = reader.cursor;
-        reader.expect(NBTLISTARROPEN);
+        tryWithData(() => reader.expect(NBTLISTARROPEN));
         if (!reader.canRead()) {
             throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected " + NBTLISTARRCLOSE), { correctType: true, completions: [NBTLISTARRCLOSE] });
         }
         reader.skipWhitespace();
         if (reader.peek() === NBTLISTARRCLOSE) {
             reader.skip();
-            return NBTLISTARROPEN + NBTLISTARRCLOSE;
+            return { text: NBTLISTARROPEN + NBTLISTARRCLOSE, value: [], type: "list" };
         }
         let listType;
         try {
             listType = parseValue(reader);
         } catch (err) {
-            (err.data.path as string[]).splice(0, 0, ".");
+            err.data.path.splice(0, 0, ".");
+            err.data.parsedValue = [];
             throw err;
         }
+        out.push(listType.value);
         reader.skipWhitespace();
         if (reader.peek() === NBTLISTARRCLOSE) {
             reader.skip();
-            return reader.string.slice(start, reader.cursor);
+            return { text: reader.string.slice(start, reader.cursor), value: out, type: "list" };
         }
         tryWithData(() => reader.expect(NBTARGSEP), {
             correctType: true,
-            compString: endCompletableTag.test(listType.type) ? listType.value.toString() : undefined,
+            compString: endCompletableTag.test(listType.type) ? listType.text : undefined,
         });
         while (reader.canRead()) {
             reader.skipWhitespace();
@@ -128,9 +158,11 @@ const valueParsers = {
             try {
                 val = parseValue(reader);
             } catch (err) {
-                (err.data.path as string[]).splice(0, 0, ".");
+                err.data.path.splice(0, 0, ".");
+                err.data.parsedValue = out;
                 throw err;
             }
+            out.push(val.value);
             if (val.type !== listType.type) {
                 throw new NBTIssue(exception.mixedList.create(valStart, reader.cursor, reader.string.charAt(valStart)), { correctType: true });
             }
@@ -140,16 +172,17 @@ const valueParsers = {
             }
             tryWithData(() => reader.expect(NBTARGSEP), {
                 correctType: true,
-                compString: endCompletableTag.test(val.type) ? val.value.toString() : undefined,
+                compString: endCompletableTag.test(val.type) ? val.text : undefined,
             });
         }
         reader.skip();
-        return reader.string.slice(start, reader.cursor);
+        return { text: reader.string.slice(start, reader.cursor), value: out, type: "list" };
     },
-    tagCompound: (reader: StringReader) => {
+    tagCompound: (reader: StringReader): ParserReturn => {
+        const out: { [key: string]: any } = {};
         const keys = [];
         const start = reader.cursor;
-        reader.expect(NBTCOMPOUNDOPEN);
+        tryWithData(() => reader.expect(NBTCOMPOUNDOPEN));
         if (!reader.canRead()) {
             throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected }"), { pos: reader.cursor + 1, currKeys: [], compoundType: "key", correctType: true, completions: [NBTCOMPOUNDCLOSE] });
         }
@@ -175,8 +208,10 @@ const valueParsers = {
                 value = parseValue(reader);
             } catch (err) {
                 (err.data.path as string[]).splice(0, 0, key);
+                err.data.parsedValue = out;
                 throw err;
             }
+            out[key] = value.value;
             reader.skipWhitespace();
             next = reader.peek();
             if (next !== NBTCOMPOUNDCLOSE) {
@@ -184,73 +219,35 @@ const valueParsers = {
                     compoundType: "val",
                     correctType: true,
                     pos: reader.cursor,
-                    compString: /byte|short|int|long|float|double|string/.test(value.type) ? value.value : undefined,
+                    compString: endCompletableTag.test(value.type) ? value.text : undefined,
                 });
                 reader.skipWhitespace();
-            } else {
-                reader.skip();
-                return reader.string.slice(start, reader.cursor);
             }
         }
         reader.skip();
-        return reader.string.slice(start, reader.cursor);
+        return { text: reader.string.slice(start, reader.cursor), value: out, type: "compound" };
     },
 };
 
-const parserFunc = [
-    {
-        type: "byte",
-        func: (reader: StringReader) => valueParsers.tagWholeNum(reader, NBTNUMBERSUFFIX.BYTE),
-    },
-    {
-        type: "short",
-        func: (reader: StringReader) => valueParsers.tagWholeNum(reader, NBTNUMBERSUFFIX.SHORT),
-    },
-    {
-        type: "long",
-        func: (reader: StringReader) => valueParsers.tagWholeNum(reader, NBTNUMBERSUFFIX.LONG),
-    },
-    {
-        type: "float",
-        func: (reader: StringReader) => valueParsers.tagFloatNum(reader, NBTNUMBERSUFFIX.FLOAT),
-    },
-    {
-        type: "double",
-        func: (reader: StringReader) => valueParsers.tagFloatNum(reader, NBTNUMBERSUFFIX.DOUBLE),
-    },
-    { // This is last because it is the least restrictive number
-        type: "int",
-        func: (reader: StringReader) => valueParsers.tagWholeNum(reader),
-    },
-    {
-        type: "compound",
-        func: (reader: StringReader) => valueParsers.tagCompound(reader),
-    },
-    {
-        type: "byte_array",
-        func: (reader: StringReader) => valueParsers.tagWholeNumArray(reader, NBTARRPREFIX.BYTE_ARR),
-    },
-    {
-        type: "int_array",
-        func: (reader: StringReader) => valueParsers.tagWholeNumArray(reader, NBTARRPREFIX.INT_ARR),
-    },
-    {
-        type: "long_array",
-        func: (reader: StringReader) => valueParsers.tagWholeNumArray(reader, NBTARRPREFIX.LONG_ARR),
-    },
-    {
-        type: "list",
-        func: (reader: StringReader) => valueParsers.tagList(reader),
-    },
-    { // most open. Will match pretty much anything
-        type: "string",
-        func: (reader: StringReader) => valueParsers.tagString(reader),
-    },
+const parserFunc: [(reader: StringReader) => ParserReturn] = [
+    (reader: StringReader) => valueParsers.tagWholeNum(reader, NBTNUMBERSUFFIX.BYTE),       // byte
+    (reader: StringReader) => valueParsers.tagWholeNum(reader, NBTNUMBERSUFFIX.SHORT),      // short
+    (reader: StringReader) => valueParsers.tagWholeNum(reader, NBTNUMBERSUFFIX.LONG),       // long
+    (reader: StringReader) => valueParsers.tagFloatNum(reader, NBTNUMBERSUFFIX.FLOAT),      // float
+    (reader: StringReader) => valueParsers.tagFloatNum(reader, NBTNUMBERSUFFIX.DOUBLE),     // double
+    (reader: StringReader) => valueParsers.tagWholeNum(reader, ""),                         // int
+    (reader: StringReader) => valueParsers.tagCompound(reader),                             // compound
+    (reader: StringReader) => valueParsers.tagWholeNumArray(reader, NBTARRPREFIX.BYTE_ARR), // byte array
+    (reader: StringReader) => valueParsers.tagWholeNumArray(reader, NBTARRPREFIX.INT_ARR),  // int array
+    (reader: StringReader) => valueParsers.tagWholeNumArray(reader, NBTARRPREFIX.LONG_ARR), // long array
+    (reader: StringReader) => valueParsers.tagList(reader),                                 // list
+    (reader: StringReader) => valueParsers.tagString(reader),                               // string
 ];
 
 interface ParserReturn {
     type: string;
-    value: string;
+    text: string;
+    value: any;
 }
 
 export const parseValue = (reader: StringReader): ParserReturn => {
@@ -258,7 +255,7 @@ export const parseValue = (reader: StringReader): ParserReturn => {
     for (const e of parserFunc) {
         const start = reader.cursor;
         try {
-            return { type: e.type, value: e.func(reader) };
+            return e(reader);
         } catch (err) {
             reader.cursor = start;
             if (!(lastErr !== undefined && lastErr.data !== undefined && lastErr.data.correctType !== undefined && lastErr.data.correctType)) {
@@ -310,6 +307,12 @@ export const getSuggestionsWithStartText = (reader: StringReader, _prop: NodePro
         if (err.data !== undefined) {
             const path: any = err.data.path === undefined ? [] : err.data.path;
             const node = getNodeFromPath(path, context);
+            if (node === null) {
+                out.comp = [];
+                out.startPos = err.data.pos === undefined ? reader.cursor : err.data.pos;
+                out.startText = err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "";
+                return out;
+            }
             if (tagSuggestions[node.type] !== undefined) {
                 out.comp = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node, err);
             }
@@ -317,7 +320,7 @@ export const getSuggestionsWithStartText = (reader: StringReader, _prop: NodePro
             if (err.data.completions !== undefined) {
                 out.comp.push(...err.data.completions);
             }
-            out.startPos = err.data.pos === undefined ? 0 : err.data.pos;
+            out.startPos = err.data.pos === undefined ? reader.cursor : err.data.pos;
         }
     }
     return out;
@@ -355,16 +358,18 @@ const tagSuggestions: { [index: string]: (text: string, node?: NBTNode, err?: NB
     },
 };
 
-const getNodeFromPath = (path: string[], context?: CommandContext) => {
+const getNodeFromPath = (path: string[], context: CommandContext) => {
     const type = context.commandInfo.nbtInfo.type;
     path.splice(0, 0, type, context.commandInfo.nbtInfo.id !== undefined ? context.commandInfo.nbtInfo.id : "none");
     const arrReader = new ArrayReader(path);
     return goToPathNode(nbtPath, nbtRoot, arrReader, context);
 };
 
-const goToPathNode = (currentPath: string, tempNode: NBTNode, arrReader: ArrayReader, context?: CommandContext): NBTNode => {
-    const node = evalRef(currentPath, arrReader, tempNode, context);
-    if (arrReader.done()) {
+const goToPathNode = (currentPath: string, tempNode: NBTNode, arrReader: ArrayReader, tempContext?: CommandContext): NBTNode => {
+    const aux1context = evalContextFormat(tempNode, tempContext);
+    const node = evalRef(currentPath, arrReader, tempNode, aux1context);
+    const context = evalContextFormat(node, aux1context);
+    if (arrReader.done() || node === null) {
         return node;
     }
     const next = arrReader.peek();
@@ -386,6 +391,9 @@ const goToPathNode = (currentPath: string, tempNode: NBTNode, arrReader: ArrayRe
                     }
                 });
             }
+            if (childNode === undefined) {
+                return null;
+            }
             const out = goToPathNode(currentPath, childNode, arrReader, context);
             if (out !== null) {
                 return out;
@@ -402,7 +410,7 @@ const goToPathNode = (currentPath: string, tempNode: NBTNode, arrReader: ArrayRe
 };
 
 const evalNodeWithChildRefs = (currentPath: string, node: NBTNode, context?: CommandContext) => {
-    const out = Object.assign(node) as NBTNode;
+    const out = JSON.parse(JSON.stringify(node)) as NBTNode;
     for (const cr of out.child_ref) {
         const refUrl = Url.parse(cr);
         const fragParts = refUrl.hash === null ? [] : refUrl.hash.slice(1).split("/");
@@ -427,6 +435,9 @@ const evalNodeWithRef = (currentPath: string, arrReader: ArrayReader, node: NBTN
 };
 
 const evalRef = (currentPath: string, arrReader: ArrayReader, node: NBTNode, context?: CommandContext) => {
+    if (node === null) {
+        return null;
+    }
     let out = node;
     if (node.ref !== undefined) {
         out = evalNodeWithRef(currentPath, arrReader, out, context);
@@ -438,3 +449,30 @@ const evalRef = (currentPath: string, arrReader: ArrayReader, node: NBTNode, con
     }
     return out;
 };
+
+const evalContextFormat = (node: NBTNode, context: CommandContext) => {
+    if (node === null) {
+        return context;
+    }
+    if (node.context === undefined || node.context.data === undefined) {
+        return context;
+    }
+    const newInfo = node.context;
+    const newContext = Object.assign({}, context);
+    if (newInfo.replaceInfo !== undefined && newInfo.replaceInfo) {
+        return Object.assign(newContext, mapFinalNode(newInfo.data, (n: any) => typeof n === "string" ? sprintf(n, newInfo.ref_dict) : n));
+    }
+    return deepmerge(newContext, mapFinalNode(newInfo.data, (n: any) => typeof n === "string" ? sprintf(n, newInfo.ref_dict) : n));
+};
+
+function mapFinalNode(obj: any, callback: (n: object) => any) {
+    const out: any = {};
+    for (const o of Object.keys(obj)) {
+        if (typeof obj[o] === "object" && obj[o] !== null) {
+            out[o] = mapFinalNode(obj[o], callback);
+        } else {
+            out[o] = callback(obj[o]);
+        }
+    }
+    return out;
+}

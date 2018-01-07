@@ -73,7 +73,7 @@ describe("Block Argument Parser", () => {
             assert.deepEqual(blockArgumentParser.getSuggestions("minecraft:chest{", props).map((v) => v instanceof String ? v : v.value), ["CustomName", "Lock", "id", "x", "y", "z", "Items", "LootTable", "LootTableSeed", "}"]);
         });
         it("should give valid NBT suggestions", () => {
-            assert.deepEqual(blockArgumentParser.getSuggestions("minecraft:chest{x:", props).map((v) => v instanceof String ? v : v.value), ["-2147483648", "0", "1", "2147483647"]);
+            assert.deepEqual(blockArgumentParser.getSuggestions("minecraft:chest{x", props).map((v) => v instanceof String ? v : v.value), ["x", ":"]);
         });
     });
 });

@@ -197,9 +197,7 @@ export const parser: Parser = {
                         break;
                     case "nbt":
                         for (const val of suggestionInfo.values) {
-                            if (val.startsWith(suggestionInfo.startText) && suggestions.length < MAXSUGGESTIONS) {
-                                suggestions.push({ start: suggestionInfo.startPos, value: val });
-                            }
+                            suggestions.push({ start: suggestionInfo.startPos, value: val });
                         }
                         break;
                     default:
@@ -207,7 +205,7 @@ export const parser: Parser = {
                 }
             }
         } catch (_) {
-            // Eat the error and give no suggestions
+            global.console.trace(_);
         }
         return suggestions;
     },
