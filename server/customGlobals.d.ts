@@ -2,8 +2,8 @@
 
 declare module NodeJS {
     interface Global {
-        mcfunctionLog: (message: string) => void;
-        mcfunctionSettings: McfunctionSettings;
+        mcfunctionLog: typeof mcfunctionLog;
+        mcfunctionSettings: typeof mcfunctionSettings;
     }
 }
 
