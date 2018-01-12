@@ -26,4 +26,8 @@ export class ArrayReader {
     public addAtCursor(items: string[]) {
         this.arr.splice(this.index, 0, ...items);
     }
+
+    public getRead() {
+        return this.arr.slice(0, this.index);
+    }
 }

@@ -205,7 +205,7 @@ export const parser: Parser = {
                 }
             }
         } catch (_) {
-            global.console.trace(_);
+            // do nothing
         }
         return suggestions;
     },

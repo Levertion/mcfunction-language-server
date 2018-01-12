@@ -25,7 +25,7 @@ export interface NBTIssueData {
     path?: string[];
     parsedValue?: any;
     correctType?: boolean;
-    compoundType?: string;
+    compoundType?: "key" | "val";
     currKeys?: string[];
     pos?: number;
     compString?: string;
