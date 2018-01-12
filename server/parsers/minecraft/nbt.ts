@@ -2,11 +2,12 @@ import fs = require("fs");
 import Path = require("path");
 import { sprintf } from "sprintf-js";
 import Url = require("url");
+import { CompletionItemKind } from "vscode-languageserver/lib/main";
 import { NBTARGSEP, NBTARRPREFIX, NBTARRPREFIXSEP, NBTCOMPOUNDCLOSE, NBTCOMPOUNDOPEN, NBTKEYVALUESEP, NBTLISTARRCLOSE, NBTLISTARROPEN, NBTNUMBERSUFFIX } from "../../consts";
 import { StringReader } from "../../string-reader";
-import { CommandContext, CommandSyntaxException, NodeProperties, Parser } from "../../types";
+import { CommandContext, CommandSyntaxException, NodeProperties, Parser, Suggestion } from "../../types";
 import { ArrayReader } from "./nbt-util/array-reader";
-import { NBTIssue } from "./nbt-util/nbt-issue";
+import { NBTIssue, NBTIssueData } from "./nbt-util/nbt-issue";
 
 const nbtPath = Path.resolve(__dirname, "../../node_modules/mc-nbt-paths/root.json");
 
@@ -15,7 +16,7 @@ nbtRoot.realPath = nbtPath;
 
 const endCompletableTag = /byte|short|int|long|float|double|string/;
 
-const tryWithData = (func: () => any, data: any = {}) => {
+const tryWithData = (func: () => any, data: NBTIssueData = {}) => {
     try {
         func();
     } catch (err) {
@@ -150,6 +151,7 @@ const valueParsers = {
         tryWithData(() => reader.expect(NBTARGSEP), {
             correctType: true,
             compString: endCompletableTag.test(listType.type) ? listType.text : undefined,
+            completions: [","],
         });
         while (reader.canRead()) {
             reader.skipWhitespace();
@@ -174,6 +176,7 @@ const valueParsers = {
             tryWithData(() => reader.expect(NBTARGSEP), {
                 correctType: true,
                 compString: endCompletableTag.test(val.type) ? val.text : undefined,
+                completions: ["]"],
             });
         }
         reader.skip();
@@ -192,6 +195,9 @@ const valueParsers = {
             reader.skipWhitespace();
             const keyStart = reader.cursor;
             let key;
+            if (!reader.canRead()) {
+                throw new NBTIssue(exception.needKey.create(start, reader.cursor), { parsedValue: out, currKeys: keys, pos: keyStart, compoundType: "key", correctType: true });
+            }
             try {
                 key = reader.readString(true);
             } catch (err) {
@@ -282,7 +288,7 @@ export const parser: Parser = {
         if (context === undefined) {
             return [""];
         }
-        const out: string[] = [];
+        const out: Suggestion[] = [];
         const reader = new StringReader(text);
         try {
             parseValue(reader);
@@ -291,42 +297,24 @@ export const parser: Parser = {
                 const path: any = err.data.path;
                 const node = new NBTDocWalker(err.data.parsedValue, path, context).getNodeFromPath();
                 if (tagSuggestions[node.type] !== undefined) {
-                    out.push(...tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node, err));
+                    const funcOut = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node, err);
+                    out.push(...funcOut.map((v): Suggestion => ({
+                        kind: CompletionItemKind.Value,
+                        start: err.data.pos === undefined ? reader.cursor : err.data.pos,
+                        value: v,
+                    })));
                 }
                 if (err.data.completions !== undefined) {
-                    out.push(...err.data.completions);
+                    out.push(...(err as NBTIssue).data.completions.map((v): Suggestion => ({
+                        kind: CompletionItemKind.Value,
+                        start: err.data.pos === undefined ? reader.cursor : err.data.pos,
+                        value: v,
+                    })));
                 }
             }
         }
         return out;
     },
-};
-
-export const getSuggestionsWithStartText = (reader: StringReader, _prop: NodeProperties, context?: CommandContext) => {
-    const out: { startText?: string, comp?: string[], startPos?: number } = {};
-    try {
-        parseValue(reader);
-    } catch (err) {
-        if (err.data !== undefined) {
-            const path: any = err.data.path === undefined ? [] : err.data.path;
-            const node = new NBTDocWalker(err.data.parsedValue, path, context).getNodeFromPath();
-            if (node === null) {
-                out.comp = [];
-                out.startPos = err.data.pos === undefined ? reader.cursor : err.data.pos;
-                out.startText = err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "";
-                return out;
-            }
-            if (tagSuggestions[node.type] !== undefined) {
-                out.comp = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node, err);
-            }
-            out.startText = err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "";
-            if (err.data.completions !== undefined) {
-                out.comp.push(...err.data.completions);
-            }
-            out.startPos = err.data.pos === undefined ? reader.cursor : err.data.pos;
-        }
-    }
-    return out;
 };
 
 const tagSuggestions: { [index: string]: (text: string, node: NBTNode, err: NBTIssue) => string[] } = {

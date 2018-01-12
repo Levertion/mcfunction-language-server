@@ -81,11 +81,11 @@ describe("NBT Parser", () => {
     describe("getSuggestions()", () => {
         it("should return the correct value when queried using context", () => {
             const context: CommandContext = { datapacksFolder: undefined, executortype: "any", commandInfo: { nbtInfo: { id: "minecraft:area_effect_cloud", type: "entity" } } };
-            assert.deepEqual(NBTParser.getSuggestions("{Duration:", null, context), ["-2147483648", "0", "1", "2147483647"]);
+            assert.deepEqual(NBTParser.getSuggestions("{Duration:", null, context).map((v) => v instanceof String ? v : v.value), ["-2147483648", "0", "1", "2147483647"]);
         });
         it("should return correctly with in NBT context", () => {
             const context: CommandContext = { datapacksFolder: undefined, executortype: "any", commandInfo: { nbtInfo: { id: "minecraft:chest", type: "block" } } };
-            assert.deepEqual(NBTParser.getSuggestions("{Items:[{id:\"minecraft:iron_sword\",tag:{Damage:", null, context), ["-32768s", "0s", "1s", "32767s"]);
+            assert.deepEqual(NBTParser.getSuggestions("{Items:[{id:\"minecraft:iron_sword\",tag:{Damage:", null, context).map((v) => v instanceof String ? v : v.value), ["-32768s", "0s", "1s", "32767s"]);
         });
     });
 });

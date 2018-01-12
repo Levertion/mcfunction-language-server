@@ -1,4 +1,4 @@
-import { CommandIssue, SuggestResult } from "../../../types";
+import { CommandIssue } from "../../../types";
 
 export class NBTIssue {
     public data: NBTIssueData;
@@ -29,5 +29,5 @@ export interface NBTIssueData {
     currKeys?: string[];
     pos?: number;
     compString?: string;
-    completions?: SuggestResult[];
+    completions?: string[];
 }

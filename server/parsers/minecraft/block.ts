@@ -2,8 +2,8 @@ import { readFileSync } from "fs";
 import { CompletionItemKind } from "vscode-languageserver/lib/main";
 import { DEFAULTNAMESPACE, MAXSUGGESTIONS, NAMESPACESEPERATOR, NBTCOMPOUNDOPEN, PROPCLOSER, PROPDEFINER, PROPSEPERATOR, PROPSOPENER, TAGSTART } from "../../consts";
 import { StringReader } from "../../string-reader";
-import { CommandContext, CommandSyntaxException, NodeProperties, Parser, SuggestResult } from "../../types";
-import { getSuggestionsWithStartText, parser as NBTParser } from "./nbt";
+import { CommandContext, CommandSyntaxException, NodeProperties, Parser, Suggestion as Suggestion1, SuggestResult } from "../../types";
+import { parser as NBTParser } from "./nbt";
 
 const EXCEPTIONS = {
     tag_disallowed: new CommandSyntaxException("Tags aren't allowed here, only actual blocks", "argument.block.tag.disallowed"),
@@ -127,7 +127,7 @@ function blockParser(reader: StringReader, suggesting: boolean, context: Command
         if (reader.peek() === NBTCOMPOUNDOPEN) {
             if (suggesting) {
                 const nbtStart = reader.cursor;
-                const nbtSuggestions = getSuggestionsWithStartText(reader, undefined, {
+                const nbtSuggestions = NBTParser.getSuggestions(reader.string.slice(nbtStart), undefined, {
                     datapacksFolder: null,
                     executionTypes: null,
                     executortype: null,
@@ -138,10 +138,12 @@ function blockParser(reader: StringReader, suggesting: boolean, context: Command
                         },
                     },
                 });
+                const firstSuggest: SuggestResult = nbtSuggestions.length === 0 ? { start: 0, value: "" } : nbtSuggestions[0];
+                const vPos = nbtStart + (isSuggestion(firstSuggest) ? firstSuggest.start : 0);
                 const out: NBTSuggester = {
-                    startText: nbtSuggestions.startText,
-                    startPos: nbtStart + nbtSuggestions.startPos,
-                    values: nbtSuggestions.comp,
+                    startText: reader.string.slice(vPos),
+                    startPos: vPos,
+                    values: nbtSuggestions.map((v) => isSuggestion(v) ? v.value : v),
                     valid: true,
                     type: "nbt",
                 };
@@ -153,6 +155,10 @@ function blockParser(reader: StringReader, suggesting: boolean, context: Command
         }
     }
 }
+
+const isSuggestion = (o: any): o is Suggestion1 => {
+    return "kind" in o;
+};
 
 export const parser: Parser = {
     parse: (reader: StringReader, _prop: NodeProperties, context: CommandContext) => {
