@@ -15,3 +15,5 @@ minecraft:score_holder
 minecraft:team
 minecraft:vec2
 minecraft:vec3
+minecraft:entity_anchor
+minecraft:range
