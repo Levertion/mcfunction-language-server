@@ -16,6 +16,7 @@ const defaultData: NBTIssueData = {
     currKeys: [],
     compoundType: undefined,
     pos: 0,
+    noVal: false,
     compString: "",
     completions: [],
     parsedValue: {},
@@ -26,6 +27,7 @@ export interface NBTIssueData {
     parsedValue?: any;
     correctType?: boolean;
     compoundType?: "key" | "val";
+    noVal?: boolean;
     currKeys?: string[];
     pos?: number;
     compString?: string;

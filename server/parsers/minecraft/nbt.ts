@@ -127,7 +127,7 @@ const valueParsers = {
         const start = reader.cursor;
         tryWithData(() => reader.expect(NBTLISTARROPEN));
         if (!reader.canRead()) {
-            throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected " + NBTLISTARRCLOSE), { correctType: true, completions: [NBTLISTARRCLOSE] });
+            throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected " + NBTLISTARRCLOSE), { noVal: true, correctType: true, completions: [NBTLISTARRCLOSE] });
         }
         reader.skipWhitespace();
         if (reader.peek() === NBTLISTARRCLOSE) {
@@ -151,12 +151,15 @@ const valueParsers = {
         tryWithData(() => reader.expect(NBTARGSEP), {
             correctType: true,
             compString: endCompletableTag.test(listType.type) ? listType.text : undefined,
-            completions: [","],
+            completions: [",", "]"],
         });
         while (reader.canRead()) {
             reader.skipWhitespace();
             const valStart = reader.cursor;
             let val;
+            if (!reader.canRead()) {
+                throw new NBTIssue(exception.invalidNbt.create(start, reader.cursor, "Expected Value"), { noVal: true, correctType: true });
+            }
             try {
                 val = parseValue(reader);
             } catch (err) {
@@ -176,7 +179,7 @@ const valueParsers = {
             tryWithData(() => reader.expect(NBTARGSEP), {
                 correctType: true,
                 compString: endCompletableTag.test(val.type) ? val.text : undefined,
-                completions: ["]"],
+                completions: [",", "]"],
             });
         }
         reader.skip();
@@ -208,7 +211,7 @@ const valueParsers = {
             keys.push(key);
             reader.skipWhitespace();
             if (!reader.canRead()) {
-                throw new NBTIssue(exception.needValue.create(reader.cursor, reader.cursor), { parsedValue: out, compoundType: "val", compString: "", pos: reader.cursor, correctType: true, path: [key] });
+                throw new NBTIssue(exception.needValue.create(reader.cursor, reader.cursor), { noVal: true, parsedValue: out, compoundType: "val", compString: "", pos: reader.cursor, correctType: true, path: [key] });
             }
             let value;
             try {
@@ -297,7 +300,7 @@ export const parser: Parser = {
                 const path: any = err.data.path;
                 const node = new NBTDocWalker(err.data.parsedValue, path, context).getNodeFromPath();
                 if (tagSuggestions[node.type] !== undefined) {
-                    const funcOut = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node, err);
+                    const funcOut = tagSuggestions[node.type](err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "", node, err, context);
                     out.push(...funcOut.map((v): Suggestion => ({
                         kind: CompletionItemKind.Value,
                         start: err.data.pos === undefined ? reader.cursor : err.data.pos,
@@ -317,42 +320,34 @@ export const parser: Parser = {
     },
 };
 
-const tagSuggestions: { [index: string]: (text: string, node: NBTNode, err: NBTIssue) => string[] } = {
+const tagSuggestions: { [index: string]: (text: string, node: NBTNode, err: NBTIssue, context: CommandContext) => string[] } = {
     byte: (text: string) => ["-256b", "0b", "1b", "255b"].filter((val) => val.startsWith(text)),
     short: (text: string) => ["-32768s", "0s", "1s", "32767s"].filter((val) => val.startsWith(text)),
-    int: (text: string) => ["-2147483648", "0", "1", "2147483647"].filter((val) => val.startsWith(text)),
-    long: (text: string) => ["0l", "1l"].filter((val) => val.startsWith(text)),
-    float: (text: string) => ["0f", "1f"].filter((val) => val.startsWith(text)),
-    double: (text: string) => ["0d", "1d"].filter((val) => val.startsWith(text)),
-    compound: (text: string, node: NBTNode, err: NBTIssue) => {
+    int: (text) => ["-2147483648", "0", "1", "2147483647"].filter((val) => val.startsWith(text)),
+    long: (text) => ["0l", "1l"].filter((val) => val.startsWith(text)),
+    float: (text) => ["0f", "1f"].filter((val) => val.startsWith(text)),
+    double: (text) => ["0d", "1d"].filter((val) => val.startsWith(text)),
+    compound: (text, node, err) => {
         const out: string[] = [];
-        if (err.data.compoundType === "key") {
+        if (err.data.noVal) {
+            return ["{"];
+        } else if (err.data.compoundType === "key") {
             for (const s of Object.keys(node.children)) {
                 if (s.startsWith(text) && !err.data.currKeys.includes(s)) {
                     out.push(s);
                 }
             }
-        } else if (err.data.compoundType === "val" && node.children !== undefined) {
-            if (text === "") {
-                return ["{"];
-            }
-            const key = err.data.path[err.data.path.length - 1];
-            if (node.children[key] !== undefined && tagSuggestions[node.children[key].type] !== undefined) {
-                out.push(...tagSuggestions[node.children[key].type](
-                    err.data !== undefined && err.data.compString !== undefined ? err.data.compString : "",
-                    node.children[key],
-                    err,
-                ));
-            }
         }
         return out;
     },
-    list: (text: string, node: NBTNode, err: NBTIssue) => {
-        if (text === "") {
+    list: (_text, node, err, context) => {
+        if (err.data.noVal) {
             return ["["];
-        }
-        if (node.item !== undefined) {
-            return tagSuggestions[node.type]("", node.item, err);
+        } else if (node.item !== undefined) {
+            node.item.realPath = node.realPath;
+            const newItem = new NBTDocWalker(err.data.parsedValue, [], context)
+                .goToPathNode(node.item, new ArrayReader([]));
+            return tagSuggestions[newItem.type]("", newItem, err, context);
         }
         return [];
     },
