@@ -24,7 +24,7 @@ describe("String Argument Parser", () => {
             it("should read a quoted string section", () => {
                 const reader = new StringReader("\"quote test\" :\"-)(*");
                 assert.doesNotThrow(() => stringArgumentParser.parse(reader, properties));
-                assert.equal(reader.cursor, 11);
+                assert.equal(reader.cursor, 12);
             });
         });
         describe("Word String", () => {

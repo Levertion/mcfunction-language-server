@@ -10,6 +10,8 @@ const defaultParsers: { [id: string]: string } = {
     "minecraft:objective": "./minecraft/objective",
     "minecraft:scoreboard_slot": "./minecraft/scoreboard_slot",
     "minecraft:block": "./minecraft/block",
+    "minecraft:block_pos": "./minecraft/block_pos",
+    "minecraft:nbt": "./minecraft/nbt",
 };
 
 export function getParser(node: CommandNode): Parser | void {

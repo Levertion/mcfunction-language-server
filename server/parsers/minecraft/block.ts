@@ -1,8 +1,9 @@
 import { readFileSync } from "fs";
 import { CompletionItemKind } from "vscode-languageserver/lib/main";
-import { DEFAULTNAMESPACE, MAXSUGGESTIONS, NAMESPACESEPERATOR, PROPCLOSER, PROPDEFINER, PROPSEPERATOR, PROPSOPENER, TAGSTART } from "../../consts";
+import { DEFAULTNAMESPACE, MAXSUGGESTIONS, NAMESPACESEPERATOR, NBTCOMPOUNDOPEN, PROPCLOSER, PROPDEFINER, PROPSEPERATOR, PROPSOPENER, TAGSTART } from "../../consts";
 import { StringReader } from "../../string-reader";
-import { CommandSyntaxException, Parser, SuggestResult } from "../../types";
+import { CommandContext, CommandSyntaxException, NodeProperties, Parser, Suggestion as Suggestion1, SuggestResult } from "../../types";
+import { parser as NBTParser } from "./nbt";
 
 const EXCEPTIONS = {
     tag_disallowed: new CommandSyntaxException("Tags aren't allowed here, only actual blocks", "argument.block.tag.disallowed"),
@@ -38,13 +39,17 @@ interface PropertySuggester extends Suggestion {
     type: "property";
     block: string;
 }
-type Suggester = NameSuggester | ValueSuggester | PropertySuggester;
-function blockParser(reader: StringReader, suggesting: boolean): Suggester | void {
+interface NBTSuggester extends Suggestion {
+    type: "nbt";
+    values: string[];
+}
+type Suggester = NameSuggester | ValueSuggester | PropertySuggester | NBTSuggester;
+function blockParser(reader: StringReader, suggesting: boolean, context: CommandContext): Suggester | void {
     const begin = reader.cursor;
     if (reader.canRead() && reader.peek() === TAGSTART) {
         // Do Tag Stuff
     } else {
-        const block = reader.readUntilRegexp(/[\[ ]/);
+        const block = reader.readUntilRegexp(/[\[{ ]/);
         let blockId;
         const namespaceSepLocation = block.indexOf(NAMESPACESEPERATOR);
         if (namespaceSepLocation === -1) {
@@ -116,23 +121,54 @@ function blockParser(reader: StringReader, suggesting: boolean): Suggester | voi
                     }
                 }
             }
-            // Collapse down into NBT checking or no checking
         } else {
             throw EXCEPTIONS.id_invalid.create(begin, reader.cursor, blockId);
         }
-        // NBT stuff here
+        if (reader.peek() === NBTCOMPOUNDOPEN) {
+            if (suggesting) {
+                const nbtStart = reader.cursor;
+                const nbtSuggestions = NBTParser.getSuggestions(reader.string.slice(nbtStart), undefined, {
+                    datapacksFolder: null,
+                    executionTypes: null,
+                    executortype: null,
+                    commandInfo: {
+                        nbtInfo: {
+                            type: "block",
+                            id: blockId,
+                        },
+                    },
+                });
+                const firstSuggest: SuggestResult = nbtSuggestions.length === 0 ? { start: 0, value: "" } : nbtSuggestions[0];
+                const vPos = nbtStart + (isSuggestion(firstSuggest) ? firstSuggest.start : 0);
+                const out: NBTSuggester = {
+                    startText: reader.string.slice(vPos),
+                    startPos: vPos,
+                    values: nbtSuggestions.map((v) => isSuggestion(v) ? v.value : v),
+                    valid: true,
+                    type: "nbt",
+                };
+                return out;
+            } else {
+                NBTParser.parse(reader, undefined, context);
+                return;
+            }
+        }
     }
 }
 
+const isSuggestion = (o: any): o is Suggestion1 => {
+    return "kind" in o;
+};
+
 export const parser: Parser = {
-    parse: (reader: StringReader) => {
-        blockParser(reader, false);
+    parse: (reader: StringReader, _prop: NodeProperties, context: CommandContext) => {
+        blockParser(reader, false, context);
     },
-    getSuggestions: (start) => {
+    getSuggestions: (start: string, _prop: NodeProperties, context: CommandContext) => {
         const suggestions: SuggestResult[] = [];
         try {
             const reader = new StringReader(start);
-            const suggestionInfo = blockParser(reader, true);
+            const suggestionInfo = blockParser(reader, true, context);
             if (!!suggestionInfo) {
                 switch (suggestionInfo.type) {
                     case "name":
@@ -165,12 +201,17 @@ export const parser: Parser = {
                             }
                         }
                         break;
+                    case "nbt":
+                        for (const val of suggestionInfo.values) {
+                            suggestions.push({ start: suggestionInfo.startPos, value: val });
+                        }
+                        break;
                     default:
                         break;
                 }
             }
         } catch (_) {
-            // Eat the error and give no suggestions
+            // do nothing
         }
         return suggestions;
     },

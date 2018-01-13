@@ -1,5 +1,5 @@
 import { Interval, IntervalTree } from "node-interval-tree";
-import { format } from "util";
+import { vsprintf } from "sprintf-js";
 import { CompletionItemKind, DiagnosticSeverity } from "vscode-languageserver/lib/main";
 import { StringReader } from "./string-reader";
 
@@ -123,6 +123,12 @@ export interface CommandIssue {
 export interface CommandContext {
     executortype: "any" | "player" | "noplayer";
     executionTypes?: string[];
+    commandInfo?: {
+        nbtInfo?: {
+            type: "entity" | "block" | "item",
+            id: string,
+        },
+    };
     datapacksFolder: string;
 }
 
@@ -171,16 +177,16 @@ export class CommandSyntaxException {
     private description: string;
     private type: string;
     private severity: DiagnosticSeverity;
-    constructor(description: string, type: string, severity?: DiagnosticSeverity) {
+    constructor(description: string, type: string, severity: DiagnosticSeverity = DiagnosticSeverity.Error) {
         this.description = description;
         this.type = type;
-        this.severity = severity || DiagnosticSeverity.Error;
+        this.severity = severity;
     }
     public create(start: number, end: number, ...formatting: any[]): CommandIssue {
         const diagnosis: CommandIssue = { severity: this.severity } as CommandIssue;
         diagnosis.end = end;
         diagnosis.start = start;
-        diagnosis.message = format(this.description, ...formatting);
+        diagnosis.message = vsprintf(this.description, formatting);
         diagnosis.type = this.type;
         return diagnosis;
     }

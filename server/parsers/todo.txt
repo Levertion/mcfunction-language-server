@@ -1,4 +1,3 @@
-minecraft:block_pos
 minecraft:color
 minecraft:component
 minecraft:entity
@@ -7,13 +6,15 @@ minecraft:item
 minecraft:item_slot
 minecraft:message
 minecraft:mob_effect
-minecraft:nbt
 minecraft:nbt_path
 minecraft:objective_criteria
 minecraft:particle
 minecraft:resource_location
+minecraft:function
 minecraft:rotation
 minecraft:score_holder
 minecraft:team
 minecraft:vec2
 minecraft:vec3
+minecraft:entity_anchor
+minecraft:range

@@ -1,0 +1,46 @@
+{
+    "children": {
+        "data": {
+            "children": {
+                "merge": {
+                    "children": {
+                        "entity": {
+                            "context": {
+                                "nbtInfo": {
+                                    "type": "entity"
+                                }
+                            }
+                        },
+                        "block": {
+                            "context": {
+                                "nbtInfo": {
+                                    "type": "block"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "summon": {
+            "context": {
+                "nbtInfo": {
+                    "type": "entity"
+                }
+            },
+            "children": {
+                "entity": {
+                    "children": {
+                        "pos": {
+                            "context": {
+                                "nbtInfo": {
+                                    "id": "%2$s"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
