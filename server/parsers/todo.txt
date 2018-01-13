@@ -10,6 +10,7 @@ minecraft:nbt_path
 minecraft:objective_criteria
 minecraft:particle
 minecraft:resource_location
+minecraft:function
 minecraft:rotation
 minecraft:score_holder
 minecraft:team
